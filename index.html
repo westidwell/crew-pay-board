@@ -1,0 +1,2613 @@
+<!doctype html>
+<!-- Built from src/ by scripts/build.js. Edit the files in src/, then run: npm run build -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0e1114">
+<meta name="color-scheme" content="dark">
+<meta name="description" content="Piece-rate pay board for small trade crews. Works offline; your data stays on your device.">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Crew Pay">
+<title>Crew Pay Board</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230e1114'/%3E%3Crect x='15' y='13' width='34' height='38' rx='5' fill='%23f2a516'/%3E%3Crect x='21' y='21' width='22' height='4' rx='2' fill='%230e1114'/%3E%3Crect x='21' y='29' width='22' height='4' rx='2' fill='%230e1114'/%3E%3Crect x='21' y='37' width='13' height='4' rx='2' fill='%230e1114'/%3E%3C/svg%3E">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+:root {
+  --bg: #0e1114;
+  --card: #171b21;
+  --card2: #1f252d;
+  --line: #2a313a;
+  --tx: #edf0f4;
+  --mut: #97a1ad;
+  --acc: #f2a516;
+  --ok: #2fbf71;
+  --bad: #f0565a;
+  --blue: #5ea4f7;
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--tx);
+  font: 15px/1.4 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  padding-bottom: calc(48px + env(safe-area-inset-bottom));
+}
+button, input, select, textarea { font: inherit; color: inherit; }
+header {
+  position: sticky; top: 0; z-index: 10;
+  background: var(--bg);
+  padding: calc(10px + env(safe-area-inset-top)) 12px 4px;
+  border-bottom: 1px solid var(--line);
+}
+.top { max-width: 720px; margin: 0 auto; }
+h1 { font-size: 17px; margin: 0; display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+h1 small { color: var(--mut); font-weight: 400; font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tabs { display: flex; gap: 6px; margin: 8px 0 6px; }
+.tab {
+  flex: 1; padding: 10px 4px; border: 1px solid var(--line); background: var(--card);
+  border-radius: 10px; font-weight: 600; font-size: 14px; cursor: pointer;
+}
+.tab.on { background: var(--acc); color: #111; border-color: var(--acc); }
+main { max-width: 720px; margin: 0 auto; padding: 8px 12px; }
+h2 { font-size: 15px; margin: 18px 2px 8px; color: var(--acc); display: flex; justify-content: space-between; align-items: baseline; }
+h2 small { color: var(--mut); font-weight: 400; font-size: 12px; }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 12px; margin-bottom: 10px; }
+.card.warn { border-color: var(--acc); }
+.lbl { color: var(--mut); font-size: 11px; text-transform: uppercase; letter-spacing: .06em; margin: 2px 0 4px; }
+.mut { color: var(--mut); }
+.small { font-size: 12px; }
+.row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.row > .grow { flex: 1 1 120px; min-width: 0; }
+.spread { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.big { font-size: 24px; font-weight: 800; letter-spacing: -.01em; }
+.neg { color: var(--bad); }
+.pos { color: var(--ok); }
+.btn {
+  background: var(--card2); border: 1px solid var(--line); border-radius: 10px;
+  padding: 10px 12px; font-size: 14px; cursor: pointer; display: inline-flex;
+  align-items: center; justify-content: center; gap: 6px; min-height: 42px;
+}
+.btn.main { background: var(--acc); border-color: var(--acc); color: #111; font-weight: 700; }
+.btn.danger { color: #ffc9cb; border-color: rgba(240, 86, 90, .5); }
+.btn.slim { min-height: 34px; padding: 6px 10px; font-size: 13px; }
+.btn.locked { color: var(--mut); border-style: dashed; }
+.btn.locked svg { width: 14px; height: 14px; flex: 0 0 auto; }
+.btns { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0; }
+.btns .btn { flex: 1 1 140px; }
+.chip {
+  padding: 8px 12px; border-radius: 999px; border: 1px solid var(--line); background: var(--card2);
+  font-size: 14px; cursor: pointer; white-space: nowrap;
+}
+.chip.on { background: var(--tx); color: #111; border-color: var(--tx); font-weight: 600; }
+input[type=text], input[type=date], input[type=number], input:not([type]), select, textarea {
+  width: 100%; background: var(--card2); border: 1px solid var(--line); border-radius: 10px;
+  padding: 10px; font-size: 16px; min-height: 44px;
+}
+textarea { min-height: 64px; resize: vertical; }
+input:focus, select:focus, textarea:focus, .btn:focus-visible, .chip:focus-visible, .tab:focus-visible {
+  outline: 2px solid var(--blue); outline-offset: 1px;
+}
+label.f { display: block; margin-bottom: 8px; }
+label.f > span { display: block; color: var(--mut); font-size: 12px; margin-bottom: 3px; }
+.weeknav { display: flex; align-items: center; gap: 6px; margin: 6px 0 10px; }
+.weeknav .btn { min-width: 44px; }
+.weeknav .wk { flex: 1; text-align: center; font-weight: 700; font-size: 14px; }
+.person .nm { font-weight: 700; font-size: 16px; }
+.person .parts { color: var(--mut); font-size: 13px; margin-top: 2px; }
+.detail { margin-top: 8px; border-top: 1px solid var(--line); padding-top: 8px; font-size: 13px; }
+.detail .d { display: flex; justify-content: space-between; gap: 8px; padding: 4px 0; border-bottom: 1px dashed var(--line); }
+.detail .d:last-child { border-bottom: 0; }
+.detail .d .what { min-width: 0; }
+.detail .d .what b { font-weight: 600; }
+.joblist .job .when { color: var(--mut); font-size: 12px; text-transform: uppercase; letter-spacing: .04em; }
+.joblist .job .nm { font-weight: 700; font-size: 16px; margin: 2px 0 4px; }
+.joblist .job .ln { font-size: 13px; color: var(--mut); }
+.line { background: var(--card2); border: 1px solid var(--line); border-radius: 12px; padding: 10px; margin-bottom: 8px; }
+.line .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 8px; }
+.line .grid > :first-child { grid-column: 1 / -1; }
+.line .amt { font-weight: 700; }
+.who { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 4px; }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+.seg button { background: var(--card2); border: 0; padding: 8px 12px; cursor: pointer; font-size: 14px; }
+.seg button.on { background: var(--tx); color: #111; font-weight: 600; }
+.total-bar .spread { flex-wrap: wrap; }
+.total-bar {
+  position: sticky; bottom: 0; background: var(--bg); border-top: 1px solid var(--line);
+  padding: 10px 0 calc(10px + env(safe-area-inset-bottom)); margin-top: 10px;
+}
+.banner { background: #3b2a06; color: #fde7b0; border-radius: 10px; padding: 10px; font-size: 13px; margin: 8px 0; }
+.banner.bad { background: #3a1416; color: #ffd0d2; }
+.banner .btn { margin-top: 8px; }
+.rate { display: grid; grid-template-columns: 1fr 1fr 44px; gap: 6px; align-items: center; margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px dashed var(--line); }
+.rate > :first-child { grid-column: 1 / -1; }
+.rate.lbl { border-bottom: 0; padding-bottom: 0; margin-bottom: 4px; }
+.rate .x { background: none; border: 0; color: var(--mut); font-size: 20px; cursor: pointer; min-height: 44px; }
+.empty { color: var(--mut); text-align: center; padding: 26px 10px; }
+ul.plain { margin: 6px 0; padding-left: 18px; }
+ul.plain li { margin: 3px 0; }
+.err { color: #ffc9cb; }
+#toast {
+  position: fixed; left: 50%; bottom: calc(18px + env(safe-area-inset-bottom)); transform: translateX(-50%);
+  background: var(--tx); color: #111; padding: 10px 14px; border-radius: 10px; font-weight: 600;
+  opacity: 0; pointer-events: none; transition: opacity .2s; z-index: 30; max-width: 90vw;
+}
+#toast.on { opacity: 1; }
+#modal { position: fixed; inset: 0; background: rgba(0, 0, 0, .6); display: none; z-index: 20; padding: 16px; overflow: auto; }
+#modal.on { display: flex; align-items: flex-start; justify-content: center; }
+#modal .box {
+  background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 16px;
+  width: 100%; max-width: 480px; margin-top: 8vh;
+}
+#modal h3 { margin: 0 0 8px; font-size: 17px; display: flex; align-items: center; gap: 8px; }
+#modal h3 svg { width: 18px; height: 18px; color: var(--acc); }
+#modal a { color: var(--blue); }
+#print { display: none; }
+.stmt { color: #111; background: #fff; font: 13px/1.4 system-ui, sans-serif; padding: 8px 0; page-break-after: always; break-after: page; }
+.stmt:last-child { page-break-after: auto; break-after: auto; }
+.stmt h2 { color: #111; margin: 0 0 4px; font-size: 18px; display: block; }
+.stmt .meta { display: flex; flex-wrap: wrap; gap: 4px 24px; margin-bottom: 10px; }
+.stmt table { width: 100%; border-collapse: collapse; margin: 6px 0 12px; }
+.stmt th, .stmt td { border-bottom: 1px solid #ccc; padding: 4px 6px; text-align: left; vertical-align: top; }
+.stmt th { font-size: 11px; text-transform: uppercase; letter-spacing: .04em; color: #555; }
+.stmt td.n, .stmt th.n { text-align: right; white-space: nowrap; }
+.stmt .tot td { border-bottom: 0; }
+.stmt .tot .net td { font-weight: 800; font-size: 15px; border-top: 2px solid #111; }
+.stmt .sign { margin-top: 28px; display: flex; gap: 24px; }
+.stmt .sign div { flex: 1; border-top: 1px solid #111; padding-top: 4px; font-size: 12px; color: #555; }
+.stmt .foot { margin-top: 14px; font-size: 11px; color: #777; }
+@media print {
+  body { background: #fff; padding: 0; }
+  body.printing header, body.printing main, body.printing #modal, body.printing #toast, body.printing .total-bar { display: none !important; }
+  body.printing #print { display: block; }
+  @page { margin: 14mm; }
+}
+@media (min-width: 560px) {
+  .line .grid { grid-template-columns: 2fr 1fr 1fr; }
+  .line .grid > :first-child { grid-column: auto; }
+  .rate { grid-template-columns: 1fr 90px 104px 44px; border-bottom: 0; padding-bottom: 0; margin-bottom: 6px; }
+  .rate > :first-child { grid-column: auto; }
+}
+</style>
+</head>
+<body>
+<header>
+  <div class="top">
+    <h1>Crew Pay Board <small id="crewname"></small></h1>
+    <nav class="tabs" role="tablist" aria-label="Sections">
+      <button class="tab" role="tab" data-tab="week">Week</button>
+      <button class="tab" role="tab" data-tab="log">Log job</button>
+      <button class="tab" role="tab" data-tab="rates">Rates</button>
+      <button class="tab" role="tab" data-tab="setup">Setup</button>
+    </nav>
+  </div>
+</header>
+<main id="main" aria-live="polite">
+  <noscript><p class="empty">Crew Pay Board needs JavaScript turned on.</p></noscript>
+</main>
+<div id="modal" role="dialog" aria-modal="true"></div>
+<div id="toast" role="status"></div>
+<div id="print"></div>
+<input type="file" id="file-backup" accept=".json,application/json" hidden>
+<input type="file" id="file-csv" accept=".csv,text/csv,text/plain" hidden>
+<script>
+/*
+ * Crew Pay Board engine.
+ * Pure functions shared by the page (index.html) and the Node tests.
+ * No DOM, no storage, no network. Money is handled as whole cents.
+ */
+(function (root, factory) {
+  'use strict';
+  var api = factory();
+  if (typeof module === 'object' && module.exports) module.exports = api;
+  else root.CrewPay = api;
+})(typeof globalThis !== 'undefined' ? globalThis : this, function () {
+  'use strict';
+
+  var APP_ID = 'crew-pay-board';
+  var DATA_VERSION = 1;
+  var RATE_DECIMALS = 4; // rates keep up to 4 decimals ($0.0850 per sq ft)
+  var QTY_DECIMALS = 3; // quantities keep up to 3 decimals (12.125 ft)
+
+  // ---------------------------------------------------------------------------
+  // Exact decimal math (BigInt) so 0.1 + 0.2 style float errors never reach pay.
+  // ---------------------------------------------------------------------------
+
+  function decimalString(value) {
+    if (typeof value === 'number') {
+      if (!isFinite(value)) throw new Error('Not a number: ' + value);
+      var s = String(value);
+      if (/e/i.test(s)) s = value.toFixed(12);
+      return s;
+    }
+    var t = String(value == null ? '' : value).trim().replace(/[$,\s]/g, '');
+    var paren = /^\((.*)\)$/.exec(t); // accounting style (12.50) means negative
+    if (paren) t = '-' + paren[1];
+    return t;
+  }
+
+  /** Parse a number or numeric text into a BigInt scaled by 10^decimals, rounding half away from zero. */
+  function toScaled(value, decimals) {
+    var s = decimalString(value);
+    var m = /^([+-])?(\d*)(?:\.(\d*))?$/.exec(s);
+    if (!m || (m[2] === '' && !m[3])) throw new Error('Not a number: "' + value + '"');
+    var neg = m[1] === '-';
+    var frac = m[3] || '';
+    var kept = (frac + '0'.repeat(decimals)).slice(0, decimals);
+    var next = frac.length > decimals ? frac.charCodeAt(decimals) - 48 : 0;
+    var n = BigInt((m[2] || '0') + kept);
+    if (next >= 5) n += BigInt(1);
+    return neg ? -n : n;
+  }
+
+  function divRoundHalfAway(n, d) {
+    var q = n / d;
+    var r = n % d;
+    if (r < 0) r = -r;
+    if (r * BigInt(2) >= d) q += n < 0 ? BigInt(-1) : BigInt(1);
+    return q;
+  }
+
+  /** Read a number, or return null when it is blank or not a number. */
+  function parseNumber(value) {
+    if (value == null) return null;
+    if (typeof value === 'number') return isFinite(value) ? value : null;
+    var s = decimalString(value);
+    if (s === '' || !/^[+-]?(\d+\.?\d*|\.\d+)$/.test(s)) return null;
+    return Number(s);
+  }
+
+  /** Dollars (number or text like "$1,234.50") to whole cents. */
+  function toCents(value) {
+    return Number(toScaled(value, 2));
+  }
+
+  /** Same as toCents but returns null instead of throwing. */
+  function parseCents(value) {
+    if (parseNumber(value) === null) return null;
+    return toCents(value);
+  }
+
+  /** Pay for one line: quantity x rate, rounded to the cent (half away from zero). */
+  function lineCents(qty, rate) {
+    var q = toScaled(qty, QTY_DECIMALS);
+    var r = toScaled(rate, RATE_DECIMALS);
+    var scale = BigInt(10) ** BigInt(QTY_DECIMALS + RATE_DECIMALS - 2);
+    return Number(divRoundHalfAway(q * r, scale));
+  }
+
+  /** Split cents across n people so the parts add back up exactly. Extra pennies go to the first names. */
+  function splitCents(cents, n) {
+    if (!(n >= 1)) return [];
+    var abs = Math.abs(cents);
+    var base = Math.floor(abs / n);
+    var rem = abs - base * n;
+    var out = [];
+    for (var i = 0; i < n; i++) {
+      var v = base + (i < rem ? 1 : 0);
+      out.push(cents < 0 && v ? -v : v);
+    }
+    return out;
+  }
+
+  function groupThousands(s) {
+    return s.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  }
+
+  /** 123456 -> "$1,234.56", -1550 -> "-$15.50" */
+  function fmtMoney(cents) {
+    var c = Math.round(cents) || 0;
+    var abs = Math.abs(c);
+    var body = groupThousands(String(Math.floor(abs / 100))) + '.' + String(abs % 100).padStart(2, '0');
+    return (c < 0 ? '-$' : '$') + body;
+  }
+
+  /** 123450 -> "1234.50" (for CSV files) */
+  function centsToDecimal(cents) {
+    var c = Math.round(cents) || 0;
+    var abs = Math.abs(c);
+    return (c < 0 ? '-' : '') + Math.floor(abs / 100) + '.' + String(abs % 100).padStart(2, '0');
+  }
+
+  function scaledToText(n, decimals, minDecimals) {
+    var neg = n < 0;
+    if (neg) n = -n;
+    var s = n.toString().padStart(decimals + 1, '0');
+    var whole = s.slice(0, s.length - decimals);
+    var frac = s.slice(s.length - decimals).replace(/0+$/, '');
+    while (frac.length < minDecimals) frac += '0';
+    return (neg ? '-' : '') + whole + (frac ? '.' + frac : '');
+  }
+
+  /** 6 -> "6.00", 0.085 -> "0.085" */
+  function fmtRate(rate) {
+    return scaledToText(toScaled(rate, RATE_DECIMALS), RATE_DECIMALS, 2);
+  }
+
+  /** 12 -> "12", 12.5 -> "12.5" */
+  function fmtQty(qty) {
+    return scaledToText(toScaled(qty, QTY_DECIMALS), QTY_DECIMALS, 0);
+  }
+
+  // ---------------------------------------------------------------------------
+  // Dates. Everything is a plain "YYYY-MM-DD" string; math runs in UTC so
+  // daylight-saving changes never shift a day.
+  // ---------------------------------------------------------------------------
+
+  var DAY_MS = 86400000;
+  var ISO_RE = /^(\d{4})-(\d{2})-(\d{2})$/;
+  var DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  var MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  var WEEK_STARTS = { mon: 1, sun: 0 };
+
+  function pad2(n) {
+    return (n < 10 ? '0' : '') + n;
+  }
+
+  function isISODate(s) {
+    var m = ISO_RE.exec(String(s));
+    if (!m) return false;
+    var d = new Date(Date.UTC(+m[1], +m[2] - 1, +m[3]));
+    return d.getUTCFullYear() === +m[1] && d.getUTCMonth() === +m[2] - 1 && d.getUTCDate() === +m[3];
+  }
+
+  function toUTC(iso) {
+    if (!isISODate(iso)) throw new Error('Bad date "' + iso + '" (use YYYY-MM-DD)');
+    var m = ISO_RE.exec(iso);
+    return Date.UTC(+m[1], +m[2] - 1, +m[3]);
+  }
+
+  function fromUTC(ms) {
+    var d = new Date(ms);
+    return d.getUTCFullYear() + '-' + pad2(d.getUTCMonth() + 1) + '-' + pad2(d.getUTCDate());
+  }
+
+  function addDays(iso, n) {
+    return fromUTC(toUTC(iso) + n * DAY_MS);
+  }
+
+  /** 0 = Sunday ... 6 = Saturday */
+  function dayOfWeek(iso) {
+    return new Date(toUTC(iso)).getUTCDay();
+  }
+
+  /** First day of the pay week holding iso. weekStart is "mon" or "sun". */
+  function weekStartOf(iso, weekStart) {
+    var first = WEEK_STARTS[weekStart] === undefined ? 1 : WEEK_STARTS[weekStart];
+    return addDays(iso, -((dayOfWeek(iso) - first + 7) % 7));
+  }
+
+  function weekOf(iso, weekStart) {
+    var start = weekStartOf(iso, weekStart);
+    var days = [];
+    for (var i = 0; i < 7; i++) days.push(addDays(start, i));
+    return { start: start, end: days[6], days: days };
+  }
+
+  /** Today's date on this device, as YYYY-MM-DD. */
+  function localISO(date) {
+    var d = date || new Date();
+    return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate());
+  }
+
+  /** Accepts 2026-11-24, 2026/11/24, 11/24/2026 and 11/24/26 (US month first). Returns YYYY-MM-DD or null. */
+  function parseLooseDate(text) {
+    var s = String(text == null ? '' : text).trim();
+    var m = /^(\d{4})[/.-](\d{1,2})[/.-](\d{1,2})$/.exec(s);
+    var iso = null;
+    if (m) iso = m[1] + '-' + pad2(+m[2]) + '-' + pad2(+m[3]);
+    m = /^(\d{1,2})[/.-](\d{1,2})[/.-](\d{2}|\d{4})$/.exec(s);
+    if (m) iso = (m[3].length === 2 ? '20' + m[3] : m[3]) + '-' + pad2(+m[1]) + '-' + pad2(+m[2]);
+    return iso && isISODate(iso) ? iso : null;
+  }
+
+  /** "Tue Nov 24" */
+  function fmtDay(iso) {
+    var m = ISO_RE.exec(iso);
+    return DAY_NAMES[dayOfWeek(iso)] + ' ' + MONTH_NAMES[+m[2] - 1] + ' ' + +m[3];
+  }
+
+  /** "Mon Nov 23 - Sun Nov 29, 2026" */
+  function fmtRange(start, end) {
+    return fmtDay(start) + ' – ' + fmtDay(end) + ', ' + end.slice(0, 4);
+  }
+
+  // ---------------------------------------------------------------------------
+  // Data
+  // ---------------------------------------------------------------------------
+
+  var idCounter = 0;
+  function makeId(prefix) {
+    idCounter = (idCounter + 1) % 1679616;
+    return (prefix || 'x') + Date.now().toString(36) + Math.random().toString(36).slice(2, 6) + idCounter.toString(36);
+  }
+
+  function str(v) {
+    return v == null ? '' : String(v);
+  }
+  function arr(v) {
+    return Array.isArray(v) ? v : [];
+  }
+  function isObj(v) {
+    return !!v && typeof v === 'object' && !Array.isArray(v);
+  }
+  function num(v) {
+    var n = parseNumber(v);
+    return n === null ? 0 : n;
+  }
+  function uniq(list) {
+    var seen = {};
+    return list.filter(function (x) {
+      if (seen[x]) return false;
+      seen[x] = true;
+      return true;
+    });
+  }
+  function clone(obj) {
+    return JSON.parse(JSON.stringify(obj));
+  }
+
+  function emptyState() {
+    return {
+      app: APP_ID,
+      version: DATA_VERSION,
+      sample: false,
+      settings: { crewName: '', weekStart: 'mon' },
+      rates: [],
+      people: [],
+      jobs: []
+    };
+  }
+
+  /** Person names can't hold "+" because the CSV uses it to join names on a split line. */
+  function cleanPersonName(name) {
+    return str(name).replace(/\+/g, '&').replace(/\s+/g, ' ').trim().slice(0, 60);
+  }
+
+  /** Check and tidy anything that claims to be saved data. Throws on things that are clearly not ours. */
+  function normalizeState(input) {
+    if (!isObj(input)) throw new Error('That is not Crew Pay Board data.');
+    var s = emptyState();
+    var st = isObj(input.settings) ? input.settings : {};
+    s.sample = input.sample === true;
+    s.settings.crewName = str(st.crewName).trim().slice(0, 80);
+    s.settings.weekStart = st.weekStart === 'sun' ? 'sun' : 'mon';
+    s.rates = arr(input.rates)
+      .filter(isObj)
+      .map(function (r) {
+        return {
+          id: str(r.id) || makeId('r'),
+          name: str(r.name).trim().slice(0, 80),
+          unit: str(r.unit).trim().slice(0, 20) || 'each',
+          rate: Math.max(0, num(r.rate))
+        };
+      })
+      .filter(function (r) {
+        return r.name;
+      });
+    s.people = arr(input.people)
+      .filter(isObj)
+      .map(function (p) {
+        return { id: str(p.id) || makeId('p'), name: cleanPersonName(p.name), active: p.active !== false };
+      })
+      .filter(function (p) {
+        return p.name;
+      });
+    s.jobs = arr(input.jobs)
+      .filter(function (j) {
+        return isObj(j) && isISODate(j.date);
+      })
+      .map(function (j) {
+        return {
+          id: str(j.id) || makeId('j'),
+          date: j.date,
+          name: str(j.name).trim().slice(0, 120),
+          notes: str(j.notes),
+          lines: arr(j.lines)
+            .filter(isObj)
+            .map(function (l) {
+              return {
+                id: str(l.id) || makeId('l'),
+                task: str(l.task).trim(),
+                unit: str(l.unit).trim() || 'each',
+                rate: Math.max(0, num(l.rate)),
+                qty: Math.max(0, num(l.qty)),
+                people: uniq(arr(l.people).map(str).filter(Boolean))
+              };
+            }),
+          adjustments: arr(j.adjustments)
+            .filter(isObj)
+            .map(function (a) {
+              return {
+                id: str(a.id) || makeId('a'),
+                kind: a.kind === 'backcharge' ? 'backcharge' : 'extra',
+                person: str(a.person),
+                cents: Math.abs(Math.round(num(a.cents))),
+                note: str(a.note)
+              };
+            })
+        };
+      });
+    return s;
+  }
+
+  function indexById(list) {
+    var out = {};
+    list.forEach(function (x) {
+      out[x.id] = x;
+    });
+    return out;
+  }
+
+  function findRate(state, nameOrId) {
+    var key = str(nameOrId).trim().toLowerCase();
+    if (!key) return null;
+    for (var i = 0; i < state.rates.length; i++) {
+      var r = state.rates[i];
+      if (r.id === nameOrId || r.name.toLowerCase() === key) return r;
+    }
+    return null;
+  }
+
+  function findPersonByName(state, name) {
+    var key = cleanPersonName(name).toLowerCase();
+    for (var i = 0; i < state.people.length; i++) {
+      if (state.people[i].name.toLowerCase() === key) return state.people[i];
+    }
+    return null;
+  }
+
+  function addPerson(state, name) {
+    var clean = cleanPersonName(name);
+    if (!clean) throw new Error('Type a name.');
+    if (findPersonByName(state, clean)) throw new Error(clean + ' is already on the crew.');
+    var p = { id: makeId('p'), name: clean, active: true };
+    state.people.push(p);
+    return p;
+  }
+
+  function jobsForPerson(state, personId) {
+    return state.jobs.filter(function (j) {
+      return (
+        j.lines.some(function (l) {
+          return l.people.indexOf(personId) >= 0;
+        }) ||
+        j.adjustments.some(function (a) {
+          return a.person === personId;
+        })
+      );
+    });
+  }
+
+  /** Problems that would stop a job from being saved, in plain words. Empty list means it's good. */
+  function validateJob(job, state) {
+    var errs = [];
+    var people = indexById(state ? state.people : []);
+    if (!isISODate(job.date)) errs.push('Pick a date.');
+    if (!str(job.name).trim()) errs.push('Give the job a name or lot number.');
+    if (!arr(job.lines).length && !arr(job.adjustments).length) errs.push('Add a task line, an extra or a back-charge.');
+    arr(job.lines).forEach(function (l, i) {
+      var tag = 'Line ' + (i + 1) + ': ';
+      if (!str(l.task).trim()) errs.push(tag + 'pick a task.');
+      var qty = parseNumber(l.qty);
+      var rate = parseNumber(l.rate);
+      if (qty === null || qty <= 0) errs.push(tag + 'enter a quantity above 0.');
+      if (rate === null || rate < 0) errs.push(tag + 'enter a rate (0 or more).');
+      if (!arr(l.people).length) errs.push(tag + 'pick who did it.');
+      arr(l.people).forEach(function (pid) {
+        if (state && !people[pid]) errs.push(tag + 'someone on this line is no longer on the crew.');
+      });
+    });
+    arr(job.adjustments).forEach(function (a, i) {
+      var tag = (a.kind === 'backcharge' ? 'Back-charge ' : 'Extra ') + (i + 1) + ': ';
+      if (!a.person) errs.push(tag + 'pick who it is for.');
+      else if (state && !people[a.person]) errs.push(tag + 'that person is no longer on the crew.');
+      if (!(a.cents > 0)) errs.push(tag + 'enter an amount above 0.');
+    });
+    return errs;
+  }
+
+  /** Add or replace a job (matched by id). Returns the saved job. Throws with the problems if it isn't valid. */
+  function saveJob(state, job) {
+    var errs = validateJob(job, state);
+    if (errs.length) throw new Error(errs.join('\n'));
+    var clean = normalizeState({ jobs: [job] }).jobs[0];
+    clean.id = job.id || clean.id;
+    var at = -1;
+    for (var i = 0; i < state.jobs.length; i++) if (state.jobs[i].id === clean.id) at = i;
+    if (at >= 0) state.jobs[at] = clean;
+    else state.jobs.push(clean);
+    return clean;
+  }
+
+  function deleteJob(state, jobId) {
+    state.jobs = state.jobs.filter(function (j) {
+      return j.id !== jobId;
+    });
+  }
+
+  function byDateThenName(a, b) {
+    if (a.date !== b.date) return a.date < b.date ? -1 : 1;
+    return a.name.localeCompare(b.name);
+  }
+
+  /** Money for one job: each line's pay, how it splits, and each person's share. */
+  function jobBreakdown(job) {
+    var byPerson = {};
+    function bucket(pid) {
+      if (!byPerson[pid]) byPerson[pid] = { work: 0, extra: 0, backcharge: 0, net: 0 };
+      return byPerson[pid];
+    }
+    var lines = job.lines.map(function (l) {
+      var cents = lineCents(l.qty, l.rate);
+      var shares = splitCents(cents, l.people.length);
+      l.people.forEach(function (pid, i) {
+        bucket(pid).work += shares[i];
+      });
+      return { line: l, cents: cents, shares: shares };
+    });
+    var total = lines.reduce(function (sum, x) {
+      return sum + x.cents;
+    }, 0);
+    job.adjustments.forEach(function (a) {
+      var b = bucket(a.person);
+      if (a.kind === 'backcharge') {
+        b.backcharge += a.cents;
+        total -= a.cents;
+      } else {
+        b.extra += a.cents;
+        total += a.cents;
+      }
+    });
+    Object.keys(byPerson).forEach(function (pid) {
+      var b = byPerson[pid];
+      b.net = b.work + b.extra - b.backcharge;
+    });
+    return { totalCents: total, lines: lines, byPerson: byPerson };
+  }
+
+  /**
+   * Everything for one pay week: per-person lines, extras, back-charges and net pay.
+   * anyDate can be any day inside the week.
+   */
+  function computeWeek(state, anyDate) {
+    var wk = weekOf(anyDate, state.settings.weekStart);
+    var people = indexById(state.people);
+    var jobs = state.jobs
+      .filter(function (j) {
+        return j.date >= wk.start && j.date <= wk.end;
+      })
+      .sort(byDateThenName);
+    var rows = {};
+    var order = [];
+    function row(pid) {
+      if (!rows[pid]) {
+        var p = people[pid];
+        rows[pid] = {
+          personId: pid,
+          name: p ? p.name : '(removed)',
+          active: p ? p.active : false,
+          items: [],
+          adjustments: [],
+          workCents: 0,
+          extraCents: 0,
+          backchargeCents: 0,
+          netCents: 0,
+          jobCount: 0,
+          _jobs: {}
+        };
+        order.push(pid);
+      }
+      return rows[pid];
+    }
+    state.people.forEach(function (p) {
+      if (p.active) row(p.id);
+    });
+    var unassigned = [];
+    jobs.forEach(function (job) {
+      jobBreakdown(job).lines.forEach(function (x) {
+        var l = x.line;
+        if (!l.people.length) {
+          unassigned.push({ date: job.date, jobId: job.id, job: job.name, task: l.task, cents: x.cents });
+          return;
+        }
+        l.people.forEach(function (pid, i) {
+          var r = row(pid);
+          r.items.push({
+            date: job.date,
+            jobId: job.id,
+            job: job.name,
+            task: l.task,
+            unit: l.unit,
+            qty: l.qty,
+            rate: l.rate,
+            lineCents: x.cents,
+            cents: x.shares[i],
+            splitWith: l.people.length
+          });
+          r.workCents += x.shares[i];
+          r._jobs[job.id] = true;
+        });
+      });
+      job.adjustments.forEach(function (a) {
+        var r = row(a.person);
+        r.adjustments.push({ date: job.date, jobId: job.id, job: job.name, kind: a.kind, note: a.note, cents: a.cents });
+        if (a.kind === 'backcharge') r.backchargeCents += a.cents;
+        else r.extraCents += a.cents;
+        r._jobs[job.id] = true;
+      });
+    });
+    var list = order.map(function (pid) {
+      var r = rows[pid];
+      r.netCents = r.workCents + r.extraCents - r.backchargeCents;
+      r.jobCount = Object.keys(r._jobs).length;
+      delete r._jobs;
+      return r;
+    });
+    function sum(key) {
+      return list.reduce(function (s, r) {
+        return s + r[key];
+      }, 0);
+    }
+    return {
+      start: wk.start,
+      end: wk.end,
+      days: wk.days,
+      jobs: jobs,
+      people: list,
+      workCents: sum('workCents'),
+      extraCents: sum('extraCents'),
+      backchargeCents: sum('backchargeCents'),
+      totalCents: sum('netCents'),
+      unassigned: unassigned
+    };
+  }
+
+  // ---------------------------------------------------------------------------
+  // CSV
+  // ---------------------------------------------------------------------------
+
+  var CSV_HEADERS = ['date', 'job', 'kind', 'person', 'task', 'unit', 'qty', 'rate', 'amount', 'note'];
+  var HEADER_ALIASES = {
+    day: 'date',
+    workdate: 'date',
+    jobname: 'job',
+    lot: 'job',
+    site: 'job',
+    type: 'kind',
+    who: 'person',
+    people: 'person',
+    worker: 'person',
+    name: 'person',
+    item: 'task',
+    quantity: 'qty',
+    price: 'rate',
+    total: 'amount',
+    notes: 'note',
+    memo: 'note'
+  };
+
+  function detectDelimiter(text) {
+    var first = text.split(/\r?\n/, 1)[0] || '';
+    var counts = { ',': 0, ';': 0, '\t': 0 };
+    var q = false;
+    for (var i = 0; i < first.length; i++) {
+      var c = first[i];
+      if (c === '"') q = !q;
+      else if (!q && counts[c] !== undefined) counts[c]++;
+    }
+    if (counts[','] === 0 && counts[';'] > 0) return ';';
+    if (counts[','] === 0 && counts['\t'] > 0) return '\t';
+    return ',';
+  }
+
+  /** RFC 4180 CSV reader: quotes, doubled quotes, commas and line breaks inside quotes, CRLF, BOM. */
+  function parseCsv(text) {
+    text = str(text);
+    if (text.charCodeAt(0) === 0xfeff) text = text.slice(1);
+    var delim = detectDelimiter(text);
+    var rows = [];
+    var row = [];
+    var field = '';
+    var inQuotes = false;
+    var i = 0;
+    var n = text.length;
+    function endField() {
+      row.push(field);
+      field = '';
+    }
+    function endRow() {
+      endField();
+      rows.push(row);
+      row = [];
+    }
+    while (i < n) {
+      var c = text[i];
+      if (inQuotes) {
+        if (c === '"') {
+          if (text[i + 1] === '"') {
+            field += '"';
+            i += 2;
+            continue;
+          }
+          inQuotes = false;
+          i++;
+          continue;
+        }
+        field += c;
+        i++;
+        continue;
+      }
+      if (c === '"') inQuotes = true;
+      else if (c === delim) endField();
+      else if (c === '\n') endRow();
+      else if (c === '\r') {
+        if (text[i + 1] === '\n') i++;
+        endRow();
+      } else field += c;
+      i++;
+    }
+    if (inQuotes) throw new Error('The CSV has a quote (") that is never closed.');
+    if (field !== '' || row.length) endRow();
+    return rows.filter(function (r) {
+      return !(r.length === 1 && r[0].trim() === '');
+    });
+  }
+
+  function csvCell(v) {
+    var s = str(v);
+    return /[",\r\n;]/.test(s) || /^\s|\s$/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+  }
+
+  function toCsv(rows) {
+    return (
+      rows
+        .map(function (r) {
+          return r.map(csvCell).join(',');
+        })
+        .join('\r\n') + '\r\n'
+    );
+  }
+
+  /** Stop spreadsheet apps from running text that starts like a formula. Undone on import. */
+  function safeText(s) {
+    s = str(s);
+    return /^[=+\-@\t\r]/.test(s) ? "'" + s : s;
+  }
+  function unsafeText(s) {
+    s = str(s);
+    return /^'[=+\-@\t\r]/.test(s) ? s.slice(1) : s;
+  }
+
+  function personName(people, pid) {
+    return people[pid] ? people[pid].name : '(removed)';
+  }
+
+  /** One row per task line, extra, back-charge and job note. Lines done by several people list them joined by "+". */
+  function jobsToRows(state, jobs) {
+    var people = indexById(state.people);
+    var rows = [CSV_HEADERS.slice()];
+    jobs
+      .slice()
+      .sort(byDateThenName)
+      .forEach(function (job) {
+        var name = safeText(job.name);
+        job.lines.forEach(function (l) {
+          rows.push([
+            job.date,
+            name,
+            'work',
+            safeText(
+              l.people
+                .map(function (pid) {
+                  return personName(people, pid);
+                })
+                .join('+')
+            ),
+            safeText(l.task),
+            safeText(l.unit),
+            fmtQty(l.qty),
+            fmtRate(l.rate),
+            centsToDecimal(lineCents(l.qty, l.rate)),
+            ''
+          ]);
+        });
+        job.adjustments.forEach(function (a) {
+          rows.push([job.date, name, a.kind, safeText(personName(people, a.person)), '', '', '', '', centsToDecimal(a.cents), safeText(a.note)]);
+        });
+        if (job.notes) rows.push([job.date, name, 'note', '', '', '', '', '', '', safeText(job.notes)]);
+      });
+    return rows;
+  }
+
+  function jobsInWeek(state, anyDate) {
+    var wk = weekOf(anyDate, state.settings.weekStart);
+    return state.jobs.filter(function (j) {
+      return j.date >= wk.start && j.date <= wk.end;
+    });
+  }
+
+  /** The week's jobs as CSV, in the same format importJobsCsv reads. */
+  function exportWeekCsv(state, anyDate) {
+    return toCsv(jobsToRows(state, jobsInWeek(state, anyDate)));
+  }
+
+  function exportAllJobsCsv(state) {
+    return toCsv(jobsToRows(state, state.jobs));
+  }
+
+  /** One row per person with the week's totals, plus a crew total row. */
+  function exportWeekTotalsCsv(state, anyDate) {
+    var w = computeWeek(state, anyDate);
+    var rows = [['person', 'week_start', 'week_end', 'jobs', 'piece_work', 'extras', 'backcharges', 'net_pay']];
+    w.people.forEach(function (p) {
+      rows.push([
+        safeText(p.name),
+        w.start,
+        w.end,
+        String(p.jobCount),
+        centsToDecimal(p.workCents),
+        centsToDecimal(p.extraCents),
+        centsToDecimal(p.backchargeCents),
+        centsToDecimal(p.netCents)
+      ]);
+    });
+    rows.push([
+      'CREW TOTAL',
+      w.start,
+      w.end,
+      String(w.jobs.length),
+      centsToDecimal(w.workCents),
+      centsToDecimal(w.extraCents),
+      centsToDecimal(w.backchargeCents),
+      centsToDecimal(w.totalCents)
+    ]);
+    return toCsv(rows);
+  }
+
+  /** A starter file showing every kind of row. */
+  function csvTemplate() {
+    return toCsv([
+      CSV_HEADERS,
+      ['2026-03-02', 'Lot 5 - Example Acres', 'work', 'Ana+Bo', 'Set post', 'post', '14', '6.00', '', ''],
+      ['2026-03-02', 'Lot 5 - Example Acres', 'work', 'Teo', 'Hang panel', 'panel', '12', '9.50', '', ''],
+      ['2026-03-02', 'Lot 5 - Example Acres', 'extra', 'Teo', '', '', '', '', '25.00', 'Hand-dug two posts by the gas line'],
+      ['2026-03-02', 'Lot 5 - Example Acres', 'backcharge', 'Bo', '', '', '', '', '15.00', 'Re-hung crooked gate'],
+      ['2026-03-02', 'Lot 5 - Example Acres', 'note', '', '', '', '', '', '', 'Owner wants the gate latch on the left']
+    ]);
+  }
+
+  function normalizeKind(kind, task) {
+    var k = str(kind)
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z]/g, '');
+    if (!k) return str(task).trim() ? 'work' : null;
+    if (k === 'work' || k === 'task' || k === 'piece' || k === 'line') return 'work';
+    if (k === 'extra' || k === 'extras' || k === 'bonus' || k === 'add') return 'extra';
+    if (k === 'backcharge' || k === 'backcharges' || k === 'bc' || k === 'deduct' || k === 'deduction' || k === 'chargeback') return 'backcharge';
+    if (k === 'note' || k === 'notes') return 'note';
+    return null;
+  }
+
+  /**
+   * Read jobs from CSV text and return a NEW state with them added (the input state is not changed),
+   * plus counts, problems (rows that stop a job from importing) and warnings.
+   * Rows with the same date and job name become one job. A job whose rows have any problem is skipped
+   * whole, so nobody is paid for half a job. A job already logged with the same date and name is
+   * skipped, so importing the same file twice never pays twice.
+   */
+  function importJobsCsv(state, text) {
+    var rows = parseCsv(text);
+    if (!rows.length) throw new Error('The file is empty.');
+    var col = {};
+    rows[0].forEach(function (h, i) {
+      var key = unsafeText(h)
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z]/g, '');
+      key = HEADER_ALIASES[key] || key;
+      if (CSV_HEADERS.indexOf(key) >= 0 && col[key] === undefined) col[key] = i;
+    });
+    if (col.date === undefined || col.job === undefined) {
+      throw new Error('The first row must be column names, with at least "date" and "job". Download the CSV template to see the format.');
+    }
+    var next = clone(state);
+    var errors = [];
+    var warnings = [];
+    var groups = {};
+    var order = [];
+
+    rows.slice(1).forEach(function (r, idx) {
+      var rowNo = idx + 2;
+      function get(name) {
+        return col[name] === undefined ? '' : unsafeText(str(r[col[name]]).trim());
+      }
+      if (
+        r.every(function (c) {
+          return !str(c).trim();
+        })
+      )
+        return;
+      var date = parseLooseDate(get('date'));
+      if (!date) {
+        errors.push('Row ' + rowNo + ': date "' + get('date') + '" not understood (use YYYY-MM-DD).');
+        return;
+      }
+      var jobName = get('job');
+      if (!jobName) {
+        errors.push('Row ' + rowNo + ': the job name is empty.');
+        return;
+      }
+      var key = date + '|' + jobName.toLowerCase();
+      var g = groups[key];
+      if (!g) {
+        g = groups[key] = { date: date, name: jobName, notes: [], lines: [], adjustments: [], bad: [] };
+        order.push(key);
+      }
+      function bad(msg) {
+        var full = 'Row ' + rowNo + ': ' + msg;
+        errors.push(full);
+        g.bad.push(rowNo);
+      }
+      var kind = normalizeKind(get('kind'), get('task'));
+      if (!kind) return bad('kind "' + get('kind') + '" should be work, extra, backcharge or note.');
+
+      if (kind === 'note') {
+        if (get('note')) g.notes.push(get('note'));
+        return;
+      }
+
+      if (kind === 'work') {
+        var task = get('task');
+        if (!task) return bad('work rows need a task.');
+        var qty = parseNumber(get('qty'));
+        if (qty === null || qty <= 0) return bad('quantity "' + get('qty') + '" should be a number above 0.');
+        var card = findRate(next, task);
+        var rate;
+        if (get('rate') !== '') {
+          rate = parseNumber(get('rate'));
+          if (rate === null || rate < 0) return bad('rate "' + get('rate') + '" should be a number.');
+        } else if (card) rate = card.rate;
+        else return bad('task "' + task + '" is not on the rate card and the row has no rate.');
+        if (!card) warnings.push('Row ' + rowNo + ': task "' + task + '" is not on the rate card; used the rate in the file.');
+        var names = get('person')
+          .split('+')
+          .map(cleanPersonName)
+          .filter(Boolean);
+        if (!names.length) return bad('who did it? The person column is empty.');
+        var amount = get('amount');
+        if (amount !== '') {
+          var given = parseCents(amount);
+          var calc = lineCents(qty, rate);
+          if (given !== null && given !== calc) {
+            warnings.push('Row ' + rowNo + ': amount ' + fmtMoney(given) + ' does not match qty x rate (' + fmtMoney(calc) + '); used qty x rate.');
+          }
+        }
+        if (get('note')) g.notes.push(get('note'));
+        g.lines.push({
+          task: card ? card.name : task,
+          unit: get('unit') || (card ? card.unit : 'each'),
+          rate: rate,
+          qty: qty,
+          names: names
+        });
+        return;
+      }
+
+      var who = cleanPersonName(get('person'));
+      if (!who) return bad('who is this ' + (kind === 'extra' ? 'extra' : 'back-charge') + ' for? The person column is empty.');
+      if (get('person').indexOf('+') >= 0) return bad('an extra or back-charge is for one person; put each on its own row.');
+      var cents = parseCents(get('amount'));
+      if (cents === null || cents === 0) return bad('amount "' + get('amount') + '" should be a number above 0.');
+      g.adjustments.push({ kind: kind, name: who, cents: Math.abs(cents), note: get('note') });
+    });
+
+    var added = [];
+    var peopleAdded = [];
+    var linesAdded = 0;
+    function personId(name) {
+      var p = findPersonByName(next, name);
+      if (!p) {
+        p = addPerson(next, name);
+        peopleAdded.push(p.name);
+      }
+      return p.id;
+    }
+    order.forEach(function (key) {
+      var g = groups[key];
+      var label = '"' + g.name + '" on ' + g.date;
+      if (g.bad.length) {
+        warnings.push('Skipped ' + label + ' because of the problem' + (g.bad.length > 1 ? 's' : '') + ' in row ' + g.bad.join(', ') + '.');
+        return;
+      }
+      if (!g.lines.length && !g.adjustments.length) {
+        warnings.push('Skipped ' + label + ': it has no work, extra or back-charge rows.');
+        return;
+      }
+      var dup = next.jobs.some(function (j) {
+        return j.date === g.date && j.name.toLowerCase() === g.name.toLowerCase();
+      });
+      if (dup) {
+        warnings.push('Skipped ' + label + ': a job with that name and date is already logged. Delete it first to import it again.');
+        return;
+      }
+      var job = {
+        id: makeId('j'),
+        date: g.date,
+        name: g.name,
+        notes: g.notes.join('; '),
+        lines: g.lines.map(function (l) {
+          return { id: makeId('l'), task: l.task, unit: l.unit, rate: l.rate, qty: l.qty, people: uniq(l.names.map(personId)) };
+        }),
+        adjustments: g.adjustments.map(function (a) {
+          return { id: makeId('a'), kind: a.kind, person: personId(a.name), cents: a.cents, note: a.note };
+        })
+      };
+      next.jobs.push(job);
+      added.push(job);
+      linesAdded += job.lines.length + job.adjustments.length;
+    });
+    if (added.length) next.sample = false;
+    return { state: next, jobsAdded: added.length, linesAdded: linesAdded, peopleAdded: peopleAdded, errors: errors, warnings: warnings };
+  }
+
+  // ---------------------------------------------------------------------------
+  // Backup and restore
+  // ---------------------------------------------------------------------------
+
+  function exportBackup(state, now) {
+    return JSON.stringify(
+      { app: APP_ID, kind: 'backup', version: DATA_VERSION, exportedAt: (now || new Date()).toISOString(), data: state },
+      null,
+      2
+    );
+  }
+
+  /** Read a backup file's text. Returns { state, exportedAt }. Throws a plain-words error if it isn't one. */
+  function importBackup(text) {
+    var obj;
+    try {
+      obj = JSON.parse(str(text).replace(/^﻿/, ''));
+    } catch (e) {
+      throw new Error('That file is not a Crew Pay Board backup (it is not JSON).');
+    }
+    var data = null;
+    if (isObj(obj) && obj.app === APP_ID && isObj(obj.data)) data = obj.data;
+    else if (isObj(obj) && Array.isArray(obj.jobs) && Array.isArray(obj.rates)) data = obj;
+    if (!data) throw new Error('That file is not a Crew Pay Board backup.');
+    if ((obj.version || data.version || 1) > DATA_VERSION) {
+      throw new Error('This backup was made by a newer version of Crew Pay Board. Update the page, then restore again.');
+    }
+    return { state: normalizeState(data), exportedAt: str(obj.exportedAt) };
+  }
+
+  // ---------------------------------------------------------------------------
+  // Sample data: a made-up fence crew so the board isn't empty on first open.
+  // ---------------------------------------------------------------------------
+
+  function sampleState(today) {
+    today = today || localISO();
+    var s = emptyState();
+    s.sample = true;
+    s.settings.crewName = 'Sample Fence Crew';
+    s.rates = [
+      { id: 'r_post', name: 'Set post', unit: 'post', rate: 6 },
+      { id: 'r_panel', name: 'Hang panel', unit: 'panel', rate: 9.5 },
+      { id: 'r_chain', name: 'Chain link fabric', unit: 'ft', rate: 0.85 },
+      { id: 'r_gate', name: 'Gate install', unit: 'gate', rate: 35 },
+      { id: 'r_tear', name: 'Tear-out old fence', unit: 'ft', rate: 1.25 },
+      { id: 'r_haul', name: 'Haul-off load', unit: 'load', rate: 20 }
+    ];
+    s.people = [
+      { id: 'p_ana', name: 'Ana', active: true },
+      { id: 'p_bo', name: 'Bo', active: true },
+      { id: 'p_teo', name: 'Teo', active: true }
+    ];
+    function line(rateId, qty, people) {
+      var r = findRate(s, rateId);
+      return { id: makeId('l'), task: r.name, unit: r.unit, rate: r.rate, qty: qty, people: people };
+    }
+    function job(offset, name, lines, adjustments, notes) {
+      return {
+        id: makeId('j'),
+        date: addDays(today, -offset),
+        name: name,
+        notes: notes || '',
+        lines: lines,
+        adjustments: adjustments || []
+      };
+    }
+    s.jobs = [
+      job(0, 'Lot 7 - Sample Ridge', [line('r_post', 18, ['p_ana', 'p_bo']), line('r_panel', 16, ['p_teo'])], [], 'Side yard done; back run tomorrow'),
+      job(1, 'Lot 12 - Sample Ridge', [line('r_tear', 140, ['p_bo']), line('r_haul', 2, ['p_bo']), line('r_post', 11, ['p_ana'])], [
+        { id: makeId('a'), kind: 'extra', person: 'p_ana', cents: 2500, note: 'Hand-dug two posts by the gas line' }
+      ]),
+      job(2, 'Pool fence - Example Park', [line('r_chain', 212.5, ['p_ana', 'p_teo']), line('r_gate', 1, ['p_teo'])], [
+        { id: makeId('a'), kind: 'backcharge', person: 'p_teo', cents: 1500, note: 'Re-hung gate that would not latch' }
+      ]),
+      job(3, 'Lot 3 - Sample Ridge', [line('r_post', 22, ['p_bo', 'p_teo']), line('r_panel', 20, ['p_ana', 'p_bo'])]),
+      job(4, 'Lot 9 - Sample Ridge', [line('r_panel', 14, ['p_ana']), line('r_gate', 2, ['p_bo'])]),
+      job(7, 'Dog run - Example Farm', [line('r_chain', 96, ['p_teo']), line('r_post', 9, ['p_teo'])]),
+      job(8, 'Lot 2 - Sample Ridge', [line('r_tear', 80, ['p_ana', 'p_bo']), line('r_haul', 1, ['p_ana'])])
+    ];
+    return s;
+  }
+
+  return {
+    APP_ID: APP_ID,
+    DATA_VERSION: DATA_VERSION,
+    CSV_HEADERS: CSV_HEADERS,
+    // money
+    toScaled: toScaled,
+    parseNumber: parseNumber,
+    toCents: toCents,
+    parseCents: parseCents,
+    lineCents: lineCents,
+    splitCents: splitCents,
+    fmtMoney: fmtMoney,
+    centsToDecimal: centsToDecimal,
+    fmtRate: fmtRate,
+    fmtQty: fmtQty,
+    // dates
+    isISODate: isISODate,
+    addDays: addDays,
+    dayOfWeek: dayOfWeek,
+    weekStartOf: weekStartOf,
+    weekOf: weekOf,
+    localISO: localISO,
+    parseLooseDate: parseLooseDate,
+    fmtDay: fmtDay,
+    fmtRange: fmtRange,
+    // data
+    makeId: makeId,
+    clone: clone,
+    emptyState: emptyState,
+    normalizeState: normalizeState,
+    sampleState: sampleState,
+    cleanPersonName: cleanPersonName,
+    findRate: findRate,
+    findPersonByName: findPersonByName,
+    addPerson: addPerson,
+    jobsForPerson: jobsForPerson,
+    validateJob: validateJob,
+    saveJob: saveJob,
+    deleteJob: deleteJob,
+    jobBreakdown: jobBreakdown,
+    computeWeek: computeWeek,
+    // csv
+    parseCsv: parseCsv,
+    toCsv: toCsv,
+    jobsToRows: jobsToRows,
+    exportWeekCsv: exportWeekCsv,
+    exportAllJobsCsv: exportAllJobsCsv,
+    exportWeekTotalsCsv: exportWeekTotalsCsv,
+    csvTemplate: csvTemplate,
+    importJobsCsv: importJobsCsv,
+    // backup
+    exportBackup: exportBackup,
+    importBackup: importBackup
+  };
+});
+</script>
+<script>
+/*
+ * Crew Pay Board Pro: the features reserved for the Pro edition.
+ *
+ * Every function here is a stub. Pro is not open yet. If you came here to build one of these,
+ * read PRO.md first: pull requests that add them will be closed with a pointer to it.
+ * Nothing in this file contacts any server or checks a licence.
+ */
+(function (root, factory) {
+  'use strict';
+  var api = factory();
+  if (typeof module === 'object' && module.exports) module.exports = api;
+  else root.CrewPayPro = api;
+})(typeof globalThis !== 'undefined' ? globalThis : this, function () {
+  'use strict';
+
+  /** Where Pro is described and what it will cost. Change them here and nowhere else. */
+  var PRO_URL = 'https://github.com/westidwell/crew-pay-board/blob/main/PRO.md';
+  var PRO_PRICE = '$1/month';
+
+  /** The Pro features, in the order PRO.md lists them. The page uses this list for its locked buttons. */
+  var PRO_FEATURES = [
+    {
+      key: 'crewSignIn',
+      name: 'Crew sign-in',
+      line: 'Each crew member signs in on their own phone and sees only their own jobs and pay.'
+    },
+    {
+      key: 'officeApproval',
+      name: 'Office approval',
+      line: 'The office checks and approves each week before pay is final, and approved weeks lock.'
+    },
+    {
+      key: 'multiCrew',
+      name: 'Many crews and customer rate cards',
+      line: 'Run several crews from one place, with a separate rate card for each customer.'
+    },
+    {
+      key: 'photoProof',
+      name: 'Photo proof',
+      line: 'Attach photos to each job as proof the work was done.'
+    },
+    {
+      key: 'payrollExport',
+      name: 'Payroll export',
+      line: 'Send approved weeks to payroll apps in the import format each one expects.'
+    },
+    {
+      key: 'payHistory',
+      name: 'Pay history across years',
+      line: 'Year-to-date and year-end totals per person, with every past week a tap away.'
+    }
+  ];
+
+  function feature(key) {
+    for (var i = 0; i < PRO_FEATURES.length; i++) if (PRO_FEATURES[i].key === key) return PRO_FEATURES[i];
+    throw new Error('Unknown Pro feature: ' + key);
+  }
+
+  /** "<Feature> is part of Pro ($1/month, not open yet): see PRO.md" */
+  function proMessage(key) {
+    return feature(key).name + ' is part of Pro (' + PRO_PRICE + ', not open yet): see PRO.md';
+  }
+
+  /** Thrown by every stub below. err.feature holds the feature key and err.url the PRO.md link. */
+  class ProFeatureError extends Error {
+    constructor(key) {
+      super(proMessage(key));
+      this.name = 'ProFeatureError';
+      this.feature = key;
+      this.url = PRO_URL;
+    }
+  }
+
+  /**
+   * Crew sign-in.
+   * Gives each crew member their own sign-in on their own phone. They see only their own jobs and
+   * running pay; the crew lead still sees everyone.
+   */
+  function crewSignIn(personId) {
+    throw new ProFeatureError('crewSignIn');
+  }
+
+  /**
+   * Office approval.
+   * The office reviews a pay week, asks the crew lead about anything odd, and approves it. Pay is
+   * final only after approval, and an approved week can no longer be edited.
+   */
+  function approveWeek(weekStart, approverName) {
+    throw new ProFeatureError('officeApproval');
+  }
+
+  /**
+   * Many crews.
+   * Runs several crews from one place, each with its own people and pay weeks, with a roll-up of
+   * what every crew earned.
+   */
+  function addCrew(crewName) {
+    throw new ProFeatureError('multiCrew');
+  }
+
+  /**
+   * Customer rate cards.
+   * Keeps a separate rate card for each customer, so the same task can pay differently depending
+   * on whose job it is. Part of "Many crews and customer rate cards".
+   */
+  function useCustomerRateCard(customerName) {
+    throw new ProFeatureError('multiCrew');
+  }
+
+  /**
+   * Photo proof.
+   * Attaches photos to a job (posts set, panels hung, gate latched) so pay and back-charge
+   * questions can be settled by looking.
+   */
+  function attachPhoto(jobId, photoFile) {
+    throw new ProFeatureError('photoProof');
+  }
+
+  /**
+   * Payroll export.
+   * Sends an approved week to a payroll app in the import format that app expects, instead of
+   * retyping totals.
+   */
+  function exportToPayroll(weekStart, payrollApp) {
+    throw new ProFeatureError('payrollExport');
+  }
+
+  /**
+   * Pay history across years.
+   * Year-to-date and year-end totals per person, search across every past job, and year-end
+   * summaries for tax time.
+   */
+  function payHistory(personId, fromYear, toYear) {
+    throw new ProFeatureError('payHistory');
+  }
+
+  return {
+    PRO_URL: PRO_URL,
+    PRO_PRICE: PRO_PRICE,
+    PRO_FEATURES: PRO_FEATURES,
+    ProFeatureError: ProFeatureError,
+    proMessage: proMessage,
+    feature: feature,
+    crewSignIn: crewSignIn,
+    approveWeek: approveWeek,
+    addCrew: addCrew,
+    useCustomerRateCard: useCustomerRateCard,
+    attachPhoto: attachPhoto,
+    exportToPayroll: exportToPayroll,
+    payHistory: payHistory
+  };
+});
+</script>
+<script>
+/*
+ * Crew Pay Board page logic.
+ * Uses window.CrewPay (src/engine.js) for all math and window.CrewPayPro (src/pro.js) for the
+ * locked Pro buttons. Data lives in this browser's localStorage only; nothing is sent anywhere.
+ */
+(function () {
+  'use strict';
+  var E = window.CrewPay;
+  var P = window.CrewPayPro;
+  var STORE_KEY = 'crew-pay-board:v1';
+
+  var state;
+  var storage = { ok: true, problem: '' };
+  var ui = {
+    tab: 'week',
+    week: E.localISO(),
+    open: {}, // people expanded on the Week tab
+    draft: null, // the job being logged or edited
+    lastWho: [], // who did the last line, reused for the next new line
+    pending: null, // what "Yes" does in the open confirm box
+    installEvent: null
+  };
+
+  var LOCK =
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">' +
+    '<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>';
+
+  function $(id) {
+    return document.getElementById(id);
+  }
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+  var money = E.fmtMoney;
+  function minus(cents) {
+    return '−' + money(Math.abs(cents));
+  }
+  function plural(n, word) {
+    return n + ' ' + word + (n === 1 ? '' : 's');
+  }
+
+  // ---------------------------------------------------------------------------
+  // Saving (this device only)
+  // ---------------------------------------------------------------------------
+
+  function load() {
+    var raw = null;
+    try {
+      raw = localStorage.getItem(STORE_KEY);
+    } catch (e) {
+      storage.ok = false;
+      storage.problem = 'This browser is blocking storage, so nothing is kept after you close the page. Download a backup in Setup before you leave.';
+    }
+    if (raw) {
+      try {
+        return E.normalizeState(JSON.parse(raw));
+      } catch (e) {
+        try {
+          localStorage.setItem(STORE_KEY + ':unreadable:' + Date.now(), raw);
+        } catch (e2) {
+          /* nothing more we can do */
+        }
+        storage.problem =
+          'Saved data on this device could not be read, so the sample crew was loaded instead. The unreadable copy was kept in this browser. Restore a backup in Setup if you have one.';
+      }
+    }
+    return E.sampleState(E.localISO());
+  }
+
+  function save() {
+    if (!storage.ok) return;
+    try {
+      localStorage.setItem(STORE_KEY, JSON.stringify(state));
+    } catch (e) {
+      storage.problem = 'Could not save on this device (storage may be full). Download a backup in Setup.';
+    }
+  }
+
+  function commit(msg) {
+    save();
+    render();
+    if (msg) toast(msg);
+  }
+
+  // ---------------------------------------------------------------------------
+  // Small helpers: toast, modal, downloads, files
+  // ---------------------------------------------------------------------------
+
+  var toastTimer = null;
+  function toast(msg) {
+    var t = $('toast');
+    t.textContent = msg;
+    t.classList.add('on');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () {
+      t.classList.remove('on');
+    }, 2800);
+  }
+
+  function modal(html) {
+    var m = $('modal');
+    m.innerHTML = '<div class="box">' + html + '</div>';
+    m.classList.add('on');
+    var first = m.querySelector('[data-act="confirm-yes"], [data-act="close"], button, a');
+    if (first) first.focus();
+  }
+  function closeModal() {
+    var m = $('modal');
+    m.classList.remove('on');
+    m.innerHTML = '';
+    ui.pending = null;
+  }
+  function confirmBox(title, text, yesLabel, onYes, danger) {
+    modal(
+      '<h3>' + esc(title) + '</h3><p>' + esc(text) + '</p><div class="btns">' +
+        '<button class="btn" data-act="close">Cancel</button>' +
+        '<button class="btn ' + (danger ? 'danger' : 'main') + '" data-act="confirm-yes">' + esc(yesLabel) + '</button></div>'
+    );
+    ui.pending = onYes;
+  }
+  function infoBox(title, html) {
+    modal('<h3>' + esc(title) + '</h3>' + html + '<div class="btns"><button class="btn main" data-act="close">OK</button></div>');
+  }
+
+  function download(name, text, type) {
+    var blob = new Blob([text], { type: type + ';charset=utf-8' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = name;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(function () {
+      URL.revokeObjectURL(a.href);
+      a.remove();
+    }, 1500);
+  }
+  function downloadCsv(name, text) {
+    download(name, '﻿' + text, 'text/csv'); // the mark helps Excel read accented names
+  }
+
+  function readFile(input, cb) {
+    var f = input.files && input.files[0];
+    if (!f) return;
+    var r = new FileReader();
+    r.onload = function () {
+      input.value = '';
+      cb(String(r.result));
+    };
+    r.onerror = function () {
+      input.value = '';
+      toast('Could not read that file.');
+    };
+    r.readAsText(f);
+  }
+
+  // ---------------------------------------------------------------------------
+  // Pro: visible, locked, and honest. Each button calls the stub in src/pro.js.
+  // ---------------------------------------------------------------------------
+
+  var PRO_CALLS = {
+    crewSignIn: function () {
+      P.crewSignIn(null);
+    },
+    officeApproval: function () {
+      P.approveWeek(ui.week, '');
+    },
+    multiCrew: function () {
+      P.addCrew('');
+    },
+    photoProof: function () {
+      P.attachPhoto(null, null);
+    },
+    payrollExport: function () {
+      P.exportToPayroll(ui.week, '');
+    },
+    payHistory: function () {
+      P.payHistory(null, null, null);
+    }
+  };
+
+  function locked(key, label) {
+    return '<button class="btn locked" data-act="pro" data-key="' + esc(key) + '">' + LOCK + esc(label) + '</button>';
+  }
+
+  function openPro(key) {
+    try {
+      (PRO_CALLS[key] ||
+        function () {
+          throw new P.ProFeatureError(key);
+        })();
+    } catch (err) {
+      if (!(err instanceof P.ProFeatureError)) throw err;
+      var f = P.feature(err.feature);
+      modal(
+        '<h3>' + LOCK + esc(f.name) + '</h3>' +
+          '<p>' + esc(f.line) + '</p>' +
+          '<p class="mut">' + esc(err.message) + '</p>' +
+          '<p><a href="' + esc(err.url) + '" target="_blank" rel="noopener">Read PRO.md</a></p>' +
+          '<div class="btns"><button class="btn main" data-act="close">OK</button></div>'
+      );
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Rendering
+  // ---------------------------------------------------------------------------
+
+  function render() {
+    document.querySelectorAll('.tab').forEach(function (b) {
+      var on = b.dataset.tab === ui.tab;
+      b.classList.toggle('on', on);
+      b.setAttribute('aria-selected', on ? 'true' : 'false');
+    });
+    $('crewname').textContent = state.settings.crewName;
+    var view = { week: viewWeek, log: viewLog, rates: viewRates, setup: viewSetup }[ui.tab] || viewWeek;
+    $('main').innerHTML = banners() + view();
+    if (ui.tab === 'log') updateDraftTotals();
+  }
+
+  function banners() {
+    var h = '';
+    if (storage.problem) h += '<div class="banner bad">' + esc(storage.problem) + '</div>';
+    if (state.sample && (ui.tab === 'week' || ui.tab === 'log')) {
+      h +=
+        '<div class="banner">This is a made-up sample fence crew so you can see how it works. ' +
+        'Start fresh when you are ready to add your own crew and rates.' +
+        '<div class="row"><button class="btn slim main" data-act="start-fresh">Start fresh</button>' +
+        '<button class="btn slim" data-act="keep-sample">Hide this note</button></div></div>';
+    }
+    return h;
+  }
+
+  function personName(pid) {
+    for (var i = 0; i < state.people.length; i++) if (state.people[i].id === pid) return state.people[i].name;
+    return '(removed)';
+  }
+
+  // ----- Week tab -----
+
+  function viewWeek() {
+    var w = E.computeWeek(state, ui.week);
+    var thisWeek = E.weekStartOf(E.localISO(), state.settings.weekStart) === w.start;
+    var h = '';
+    h +=
+      '<div class="weeknav"><button class="btn" data-act="week-prev" aria-label="Previous week">&#8249;</button>' +
+      '<div class="wk">' + esc(E.fmtRange(w.start, w.end)) +
+      (thisWeek ? '<div class="small mut">This week</div>' : '<div><button class="btn slim" data-act="week-now">Back to this week</button></div>') +
+      '</div><button class="btn" data-act="week-next" aria-label="Next week">&#8250;</button></div>';
+
+    h +=
+      '<div class="card"><div class="spread"><div><div class="lbl">Crew total</div>' +
+      '<div class="big' + (w.totalCents < 0 ? ' neg' : '') + '">' + money(w.totalCents) + '</div></div>' +
+      '<div class="small mut" style="text-align:right">' + plural(w.jobs.length, 'job') +
+      '<br>Pieces ' + money(w.workCents) + '<br>Extras +' + money(w.extraCents) + '<br>Back-charges ' + minus(w.backchargeCents) +
+      '</div></div></div>';
+
+    if (w.unassigned.length) {
+      h += '<div class="banner bad">' + plural(w.unassigned.length, 'line') + ' this week ' + (w.unassigned.length === 1 ? 'has' : 'have') +
+        ' nobody picked for it, so ' + (w.unassigned.length === 1 ? 'it is' : 'they are') + ' not in anyone’s pay. Edit the job to fix it.</div>';
+    }
+
+    h += '<h2>Pay by person <small>tap a name for details</small></h2>';
+    if (!w.people.length) h += '<div class="empty">No crew yet. Add people on the Setup tab.</div>';
+    w.people.forEach(function (p) {
+      var open = !!ui.open[p.personId];
+      h +=
+        '<div class="card person"><div class="spread" data-act="toggle-person" data-id="' + esc(p.personId) + '" role="button" tabindex="0" aria-expanded="' + open + '">' +
+        '<div><div class="nm">' + esc(p.name) + (p.active ? '' : ' <span class="small mut">(off)</span>') + '</div>' +
+        '<div class="parts">Pieces ' + money(p.workCents) + (p.extraCents ? ' · Extras +' + money(p.extraCents) : '') +
+        (p.backchargeCents ? ' · Back-charges ' + minus(p.backchargeCents) : '') + ' · ' + plural(p.jobCount, 'job') + '</div></div>' +
+        '<div class="big' + (p.netCents < 0 ? ' neg' : '') + '">' + money(p.netCents) + '</div></div>';
+      if (open) h += personDetail(p);
+      h += '</div>';
+    });
+
+    h +=
+      '<div class="btns"><button class="btn main" data-act="print-all">Print pay statements</button>' +
+      '<button class="btn" data-act="csv-week">Export week CSV</button>' +
+      '<button class="btn" data-act="csv-totals">Export totals CSV</button></div>';
+    h += '<div class="btns">' + locked('officeApproval', 'Send for office approval') + locked('payrollExport', 'Send to payroll app') + locked('payHistory', 'Year-to-date totals') + '</div>';
+
+    h += '<h2>Jobs this week <small>' + plural(w.jobs.length, 'job') + '</small></h2>';
+    if (!w.jobs.length) h += '<div class="empty">No jobs logged this week.<div class="btns" style="justify-content:center"><button class="btn main" data-act="go-log">Log a job</button></div></div>';
+    h += '<div class="joblist">' + w.jobs.slice().reverse().map(jobCard).join('') + '</div>';
+    return h;
+  }
+
+  function personDetail(p) {
+    var h = '<div class="detail">';
+    if (!p.items.length && !p.adjustments.length) h += '<div class="mut">Nothing logged for ' + esc(p.name) + ' this week.</div>';
+    p.items.forEach(function (it) {
+      var split = it.splitWith > 1 ? ' · split ' + it.splitWith + ' ways of ' + money(it.lineCents) : '';
+      h +=
+        '<div class="d"><div class="what"><b>' + esc(it.task) + '</b> ' + esc(E.fmtQty(it.qty)) + ' ' + esc(it.unit) + ' × $' + esc(E.fmtRate(it.rate)) +
+        '<div class="small mut">' + esc(E.fmtDay(it.date)) + ' · ' + esc(it.job) + split + '</div></div><div>' + money(it.cents) + '</div></div>';
+    });
+    p.adjustments.forEach(function (a) {
+      var bc = a.kind === 'backcharge';
+      h +=
+        '<div class="d"><div class="what"><b>' + (bc ? 'Back-charge' : 'Extra') + '</b> ' + esc(a.note) +
+        '<div class="small mut">' + esc(E.fmtDay(a.date)) + ' · ' + esc(a.job) + '</div></div>' +
+        '<div class="' + (bc ? 'neg' : 'pos') + '">' + (bc ? minus(a.cents) : '+' + money(a.cents)) + '</div></div>';
+    });
+    h +=
+      '<div class="btns"><button class="btn slim" data-act="print-one" data-id="' + esc(p.personId) + '">Print ' + esc(p.name) + '’s statement</button>' +
+      locked('crewSignIn', 'Let ' + p.name + ' see this on their phone') + '</div></div>';
+    return h;
+  }
+
+  function jobCard(job) {
+    var b = E.jobBreakdown(job);
+    var who = {};
+    job.lines.forEach(function (l) {
+      l.people.forEach(function (pid) {
+        who[pid] = true;
+      });
+    });
+    job.adjustments.forEach(function (a) {
+      who[a.person] = true;
+    });
+    var tasks = job.lines
+      .map(function (l) {
+        return l.task + ' ' + E.fmtQty(l.qty);
+      })
+      .join(' · ');
+    var adj = job.adjustments
+      .map(function (a) {
+        return (a.kind === 'backcharge' ? 'Back-charge ' + minus(a.cents) : 'Extra +' + money(a.cents)) + ' (' + personName(a.person) + ')';
+      })
+      .join(' · ');
+    return (
+      '<div class="card job"><div class="spread"><div class="when">' + esc(E.fmtDay(job.date)) + '</div><b>' + money(b.totalCents) + '</b></div>' +
+      '<div class="nm">' + esc(job.name) + '</div>' +
+      (tasks ? '<div class="ln">' + esc(tasks) + '</div>' : '') +
+      (adj ? '<div class="ln">' + esc(adj) + '</div>' : '') +
+      '<div class="ln">' + esc(Object.keys(who).map(personName).join(', ')) + '</div>' +
+      (job.notes ? '<div class="ln">Note: ' + esc(job.notes) + '</div>' : '') +
+      '<div class="btns"><button class="btn slim" data-act="job-edit" data-id="' + esc(job.id) + '">Edit</button>' +
+      '<button class="btn slim" data-act="job-copy" data-id="' + esc(job.id) + '">Copy</button>' +
+      '<button class="btn slim danger" data-act="job-del" data-id="' + esc(job.id) + '">Delete</button></div></div>'
+    );
+  }
+
+  // ----- Log tab (the job form) -----
+
+  function activePeople() {
+    return state.people.filter(function (p) {
+      return p.active;
+    });
+  }
+
+  function blankLine() {
+    var ids = {};
+    activePeople().forEach(function (p) {
+      ids[p.id] = true;
+    });
+    return {
+      rateId: '',
+      task: '',
+      unit: '',
+      rate: '',
+      qty: '',
+      people: ui.lastWho.filter(function (id) {
+        return ids[id];
+      })
+    };
+  }
+
+  function newDraft(date) {
+    return { id: null, date: date || E.localISO(), name: '', notes: '', lines: [blankLine()], adjustments: [], errors: [] };
+  }
+
+  function draftFromJob(job, asCopy) {
+    return {
+      id: asCopy ? null : job.id,
+      date: asCopy ? E.localISO() : job.date,
+      name: job.name,
+      notes: asCopy ? '' : job.notes,
+      lines: job.lines.map(function (l) {
+        var card = E.findRate(state, l.task);
+        return {
+          rateId: card && card.name === l.task ? card.id : '',
+          task: l.task,
+          unit: l.unit,
+          rate: E.fmtRate(asCopy && card ? card.rate : l.rate),
+          qty: E.fmtQty(l.qty),
+          people: l.people.slice()
+        };
+      }),
+      adjustments: asCopy
+        ? []
+        : job.adjustments.map(function (a) {
+            return { kind: a.kind, person: a.person, amount: E.centsToDecimal(a.cents), note: a.note };
+          }),
+      errors: []
+    };
+  }
+
+  function draftToJob(d) {
+    return {
+      id: d.id || undefined,
+      date: d.date,
+      name: d.name.trim(),
+      notes: d.notes.trim(),
+      lines: d.lines
+        .filter(function (l) {
+          return l.task || String(l.qty).trim(); // a line left completely blank is ignored
+        })
+        .map(function (l) {
+          return { task: l.task, unit: l.unit || 'each', rate: E.parseNumber(l.rate), qty: E.parseNumber(l.qty), people: l.people.slice() };
+        }),
+      adjustments: d.adjustments.map(function (a) {
+        var c = E.parseCents(a.amount);
+        return { kind: a.kind, person: a.person, cents: c === null ? 0 : Math.abs(c), note: a.note.trim() };
+      })
+    };
+  }
+
+  function viewLog() {
+    if (!ui.draft) ui.draft = newDraft();
+    var d = ui.draft;
+    var editing = !!d.id;
+    var people = activePeople();
+    var h = '<h2>' + (editing ? 'Edit job' : 'Log a finished job') + (editing ? ' <small>changes replace the saved job</small>' : '') + '</h2>';
+    if (!state.rates.length || !state.people.length) {
+      h += '<div class="banner">Before logging jobs, add ' + (!state.rates.length ? 'your tasks and rates on the Rates tab' : '') +
+        (!state.rates.length && !state.people.length ? ' and ' : '') + (!state.people.length ? 'your crew on the Setup tab' : '') + '.</div>';
+    }
+    if (d.errors.length) {
+      h += '<div class="banner bad" id="form-errors"><b>Not saved yet:</b><ul class="plain">' + d.errors.map(function (e) {
+        return '<li>' + esc(e) + '</li>';
+      }).join('') + '</ul></div>';
+    }
+    h +=
+      '<div class="card"><div class="row"><label class="f grow"><span>Date</span><input type="date" data-f="date" value="' + esc(d.date) + '"></label>' +
+      '<label class="f grow"><span>Job name or lot</span><input type="text" data-f="name" value="' + esc(d.name) + '" placeholder="Lot 14 - Example Hills" autocomplete="off"></label></div></div>';
+
+    h += '<h2>Work done <small>quantity × rate</small></h2>';
+    d.lines.forEach(function (l, i) {
+      h += '<div class="line"><div class="grid">' +
+        '<label class="f"><span>Task</span><select data-f="task" data-i="' + i + '">' + taskOptions(l) + '</select></label>' +
+        '<label class="f"><span>Qty' + (l.unit ? ' (' + esc(l.unit) + ')' : '') + '</span><input type="text" inputmode="decimal" data-f="qty" data-i="' + i + '" value="' + esc(l.qty) + '" placeholder="0"></label>' +
+        '<label class="f"><span>Rate $' + (l.unit ? ' per ' + esc(l.unit) : '') + '</span><input type="text" inputmode="decimal" data-f="rate" data-i="' + i + '" value="' + esc(l.rate) + '" placeholder="0.00"></label>' +
+        '</div><div class="lbl">Who did it</div><div class="who">';
+      var shown = {};
+      people.forEach(function (p) {
+        shown[p.id] = true;
+        h += chip(p.id, p.name, l.people.indexOf(p.id) >= 0, i);
+      });
+      l.people.forEach(function (pid) {
+        if (!shown[pid]) h += chip(pid, personName(pid), true, i);
+      });
+      if (!people.length) h += '<span class="small mut">Add people on the Setup tab first.</span>';
+      h += '</div><div class="spread"><span class="small mut" id="line-note-' + i + '"></span><span class="amt" id="line-amt-' + i + '">$0.00</span></div>' +
+        '<div class="btns"><button class="btn slim danger" data-act="line-del" data-i="' + i + '">Remove line</button></div></div>';
+    });
+    h += '<div class="btns"><button class="btn" data-act="line-add">+ Add task line</button></div>';
+
+    h += '<h2>Extras and back-charges <small>per person</small></h2>';
+    d.adjustments.forEach(function (a, i) {
+      h += '<div class="line"><div class="seg" role="group" aria-label="Kind">' +
+        '<button data-act="adj-kind" data-i="' + i + '" data-kind="extra" class="' + (a.kind === 'extra' ? 'on' : '') + '">Extra (adds)</button>' +
+        '<button data-act="adj-kind" data-i="' + i + '" data-kind="backcharge" class="' + (a.kind === 'backcharge' ? 'on' : '') + '">Back-charge (takes off)</button></div>' +
+        '<div class="grid" style="margin-top:8px"><label class="f"><span>Person</span><select data-f="adj-person" data-i="' + i + '"><option value="">Who?</option>' +
+        state.people.filter(function (p) {
+          return p.active || p.id === a.person;
+        }).map(function (p) {
+          return '<option value="' + esc(p.id) + '"' + (p.id === a.person ? ' selected' : '') + '>' + esc(p.name) + '</option>';
+        }).join('') + '</select></label>' +
+        '<label class="f"><span>Amount $</span><input type="text" inputmode="decimal" data-f="adj-amount" data-i="' + i + '" value="' + esc(a.amount) + '" placeholder="0.00"></label>' +
+        '<label class="f"><span>Why</span><input type="text" data-f="adj-note" data-i="' + i + '" value="' + esc(a.note) + '" placeholder="Reason"></label></div>' +
+        '<div class="btns"><button class="btn slim danger" data-act="adj-del" data-i="' + i + '">Remove</button></div></div>';
+    });
+    h += '<div class="btns"><button class="btn" data-act="adj-add">+ Add extra or back-charge</button></div>';
+
+    h += '<h2>Notes</h2><div class="card"><textarea data-f="notes" placeholder="Anything the office should know">' + esc(d.notes) + '</textarea>' +
+      '<div class="btns">' + locked('photoProof', 'Add photo proof') + '</div></div>';
+
+    h += '<div class="total-bar"><div class="spread"><div><div class="lbl">Job total</div><div class="big" id="job-total">$0.00</div>' +
+      '<div class="small mut" id="job-split"></div></div><div class="row">' +
+      '<button class="btn" data-act="job-cancel">' + (editing ? 'Cancel' : 'Clear') + '</button>' +
+      '<button class="btn main" data-act="job-save">' + (editing ? 'Save changes' : 'Save job') + '</button></div></div></div>';
+    return h;
+  }
+
+  function chip(pid, name, on, i) {
+    return '<button class="chip' + (on ? ' on' : '') + '" data-act="line-who" data-i="' + i + '" data-id="' + esc(pid) + '" aria-pressed="' + on + '">' + esc(name) + '</button>';
+  }
+
+  function taskOptions(l) {
+    var h = '<option value="">' + (state.rates.length ? 'Pick a task…' : 'Add tasks on the Rates tab') + '</option>';
+    var found = false;
+    state.rates.forEach(function (r) {
+      var sel = r.id === l.rateId;
+      if (sel) found = true;
+      h += '<option value="' + esc(r.id) + '"' + (sel ? ' selected' : '') + '>' + esc(r.name) + ' — $' + esc(E.fmtRate(r.rate)) + '/' + esc(r.unit) + '</option>';
+    });
+    if (!found && l.task) h += '<option value="__keep" selected>' + esc(l.task) + ' (not on rate card)</option>';
+    return h;
+  }
+
+  function draftNumbers() {
+    var d = ui.draft;
+    var job = { lines: [], adjustments: [] };
+    var amts = [];
+    d.lines.forEach(function (l) {
+      var q = E.parseNumber(l.qty);
+      var r = E.parseNumber(l.rate);
+      var ok = q !== null && q > 0 && r !== null && r >= 0;
+      amts.push(ok ? E.lineCents(q, r) : 0);
+      if (ok) job.lines.push({ qty: q, rate: r, people: l.people });
+    });
+    d.adjustments.forEach(function (a) {
+      var c = E.parseCents(a.amount);
+      if (c && a.person) job.adjustments.push({ kind: a.kind, person: a.person, cents: Math.abs(c) });
+    });
+    var b = E.jobBreakdown(job);
+    return { amts: amts, total: b.totalCents, byPerson: b.byPerson };
+  }
+
+  function updateDraftTotals() {
+    if (!ui.draft || !$('job-total')) return;
+    var n = draftNumbers();
+    ui.draft.lines.forEach(function (l, i) {
+      var amt = $('line-amt-' + i);
+      var note = $('line-note-' + i);
+      if (amt) amt.textContent = money(n.amts[i]);
+      if (note) {
+        var k = l.people.length;
+        note.textContent = k > 1 && n.amts[i] ? 'split ' + k + ' ways: ' + E.splitCents(n.amts[i], k).map(money).join(' + ') : k ? '' : 'pick who did it';
+      }
+    });
+    $('job-total').textContent = money(n.total);
+    $('job-total').classList.toggle('neg', n.total < 0);
+    $('job-split').textContent = Object.keys(n.byPerson)
+      .map(function (pid) {
+        return personName(pid) + ' ' + money(n.byPerson[pid].net);
+      })
+      .join(' · ');
+  }
+
+  function saveDraft() {
+    var job = draftToJob(ui.draft);
+    var errs = E.validateJob(job, state);
+    if (errs.length) {
+      ui.draft.errors = errs;
+      render();
+      var box = $('form-errors');
+      if (box && box.scrollIntoView) box.scrollIntoView({ block: 'center' });
+      return;
+    }
+    var editing = !!ui.draft.id;
+    var saved = E.saveJob(state, job);
+    if (saved.lines.length) ui.lastWho = saved.lines[saved.lines.length - 1].people.slice();
+    ui.week = saved.date;
+    var total = money(E.jobBreakdown(saved).totalCents);
+    if (editing) {
+      ui.draft = null;
+      ui.tab = 'week';
+      commit('Saved changes to ' + saved.name + ' (' + total + ')');
+    } else {
+      ui.draft = newDraft(saved.date);
+      commit('Saved ' + saved.name + ' (' + total + '). Ready for the next one.');
+    }
+    window.scrollTo(0, 0);
+  }
+
+  // ----- Rates tab -----
+
+  function viewRates() {
+    var h = '<h2>Rate card <small>what each task pays</small></h2><div class="card">';
+    if (state.rates.length) {
+      h += '<div class="rate lbl"><span>Task</span><span>Unit</span><span>$ Rate</span><span></span></div>';
+    } else {
+      h += '<div class="empty">No tasks yet. Add the work your crew gets paid for, like "Hang panel, per panel, $9.50".</div>';
+    }
+    state.rates.forEach(function (r) {
+      h += '<div class="rate">' +
+        '<input type="text" data-f="rate-name" data-id="' + esc(r.id) + '" value="' + esc(r.name) + '" aria-label="Task name">' +
+        '<input type="text" data-f="rate-unit" data-id="' + esc(r.id) + '" value="' + esc(r.unit) + '" aria-label="Unit">' +
+        '<input type="text" inputmode="decimal" data-f="rate-rate" data-id="' + esc(r.id) + '" value="' + esc(E.fmtRate(r.rate)) + '" aria-label="Rate in dollars">' +
+        '<button class="x" data-act="rate-del" data-id="' + esc(r.id) + '" aria-label="Delete ' + esc(r.name) + '">×</button></div>';
+    });
+    h += '<div class="btns"><button class="btn" data-act="rate-add">+ Add task</button></div></div>';
+    h += '<p class="small mut">Changes save as you type. Jobs already logged keep the rate they were logged with, so changing a rate never rewrites past pay.</p>';
+    h += '<div class="btns">' + locked('multiCrew', 'Rate card per customer') + '</div>';
+    return h;
+  }
+
+  function findById(list, id) {
+    for (var i = 0; i < list.length; i++) if (list[i].id === id) return list[i];
+    return null;
+  }
+
+  // ----- Setup tab -----
+
+  function viewSetup() {
+    var ws = state.settings.weekStart;
+    var h = '<h2>Crew</h2><div class="card">' +
+      '<label class="f"><span>Crew name (shows on pay statements)</span><input type="text" data-f="crew-name" value="' + esc(state.settings.crewName) + '" placeholder="My crew"></label>' +
+      '<div class="lbl">People</div>';
+    if (!state.people.length) h += '<p class="small mut">No one yet. Add each person who gets paid.</p>';
+    state.people.forEach(function (p) {
+      h += '<div class="row" style="margin-bottom:6px"><input class="grow" type="text" data-f="person-name" data-id="' + esc(p.id) + '" value="' + esc(p.name) + '" aria-label="Name">' +
+        '<button class="chip' + (p.active ? ' on' : '') + '" data-act="person-active" data-id="' + esc(p.id) + '" aria-pressed="' + p.active + '">' + (p.active ? 'Active' : 'Off') + '</button>' +
+        '<button class="btn slim danger" data-act="person-del" data-id="' + esc(p.id) + '">Remove</button></div>';
+    });
+    h += '<div class="row"><input class="grow" type="text" id="new-person" placeholder="New person’s name" autocomplete="off">' +
+      '<button class="btn" data-act="person-add">Add</button></div>' +
+      '<div class="btns">' + locked('crewSignIn', 'Give each person their own sign-in') + locked('multiCrew', 'Add another crew') + '</div></div>';
+
+    h += '<h2>Pay week</h2><div class="card"><div class="lbl">Week starts on</div><div class="seg" role="group" aria-label="Week starts on">' +
+      '<button data-act="weekstart" data-v="mon" class="' + (ws === 'mon' ? 'on' : '') + '">Monday</button>' +
+      '<button data-act="weekstart" data-v="sun" class="' + (ws === 'sun' ? 'on' : '') + '">Sunday</button></div></div>';
+
+    h += '<h2>Your data</h2><div class="card"><p class="small mut" style="margin-top:0">Everything is saved in this browser on this device only. Nothing is sent anywhere. ' +
+      'Download a backup now and then, and before you clear your browser or switch phones.</p>' +
+      '<div class="btns"><button class="btn main" data-act="backup">Download backup</button><button class="btn" data-act="restore">Restore from backup</button></div>' +
+      '<div class="btns"><button class="btn" data-act="csv-import">Import jobs from CSV</button><button class="btn" data-act="csv-template">CSV template</button>' +
+      '<button class="btn" data-act="csv-all">Export all jobs CSV</button></div>' +
+      '<div class="btns"><button class="btn" data-act="load-sample">Load sample crew</button><button class="btn danger" data-act="erase">Erase everything</button></div></div>';
+
+    h += '<h2>Put it on your phone</h2><div class="card small">' +
+      '<p style="margin-top:0"><b>iPhone:</b> open this page in Safari, tap Share, then Add to Home Screen.</p>' +
+      '<p><b>Android:</b> open it in Chrome, tap the menu, then Install app (or Add to Home screen).</p>' +
+      '<p class="mut" style="margin-bottom:0">After that it opens like an app and works with no signal.</p>' +
+      (ui.installEvent ? '<div class="btns"><button class="btn main" data-act="install">Install now</button></div>' : '') + '</div>';
+
+    h += '<h2>Pro <small>not open yet</small></h2><div class="card">';
+    P.PRO_FEATURES.forEach(function (f) {
+      h += '<div style="margin-bottom:10px">' + locked(f.key, f.name) + '<div class="small mut" style="margin-top:4px">' + esc(f.line) + '</div></div>';
+    });
+    h += '<p class="small mut" style="margin-bottom:0">Pro will be ' + esc(P.PRO_PRICE) + '. <a href="' + esc(P.PRO_URL) + '" target="_blank" rel="noopener" style="color:var(--blue)">Read PRO.md</a></p></div>';
+    return h;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Printing
+  // ---------------------------------------------------------------------------
+
+  function statementHtml(w, p) {
+    var crew = state.settings.crewName;
+    var h = '<section class="stmt"><h2>Pay statement</h2><div class="meta">' +
+      '<div><b>Name:</b> ' + esc(p.name) + '</div>' + (crew ? '<div><b>Crew:</b> ' + esc(crew) + '</div>' : '') +
+      '<div><b>Week:</b> ' + esc(E.fmtRange(w.start, w.end)) + '</div></div>';
+    if (p.items.length) {
+      h += '<table><thead><tr><th>Date</th><th>Job</th><th>Task</th><th class="n">Qty</th><th class="n">Rate</th><th class="n">Pay</th></tr></thead><tbody>';
+      p.items.forEach(function (it) {
+        h += '<tr><td>' + esc(E.fmtDay(it.date)) + '</td><td>' + esc(it.job) + '</td><td>' + esc(it.task) +
+          (it.splitWith > 1 ? '<div class="small">split ' + it.splitWith + ' ways of ' + money(it.lineCents) + '</div>' : '') + '</td>' +
+          '<td class="n">' + esc(E.fmtQty(it.qty)) + ' ' + esc(it.unit) + '</td><td class="n">$' + esc(E.fmtRate(it.rate)) + '</td><td class="n">' + money(it.cents) + '</td></tr>';
+      });
+      h += '</tbody></table>';
+    }
+    if (p.adjustments.length) {
+      h += '<table><thead><tr><th>Date</th><th>Job</th><th>Extra or back-charge</th><th class="n">Amount</th></tr></thead><tbody>';
+      p.adjustments.forEach(function (a) {
+        var bc = a.kind === 'backcharge';
+        h += '<tr><td>' + esc(E.fmtDay(a.date)) + '</td><td>' + esc(a.job) + '</td><td>' + (bc ? 'Back-charge' : 'Extra') + (a.note ? ': ' + esc(a.note) : '') +
+          '</td><td class="n">' + (bc ? minus(a.cents) : '+' + money(a.cents)) + '</td></tr>';
+      });
+      h += '</tbody></table>';
+    }
+    h += '<table class="tot"><tr><td>Piece work</td><td class="n">' + money(p.workCents) + '</td></tr>' +
+      '<tr><td>Extras</td><td class="n">+' + money(p.extraCents) + '</td></tr>' +
+      '<tr><td>Back-charges</td><td class="n">' + minus(p.backchargeCents) + '</td></tr>' +
+      '<tr class="net"><td>Net pay</td><td class="n">' + money(p.netCents) + '</td></tr></table>' +
+      '<div class="sign"><div>Received by</div><div>Date</div></div>' +
+      '<div class="foot">Printed ' + esc(E.fmtDay(E.localISO())) + ' with Crew Pay Board.</div></section>';
+    return h;
+  }
+
+  function printStatements(personId) {
+    var w = E.computeWeek(state, ui.week);
+    var list = w.people.filter(function (p) {
+      return personId ? p.personId === personId : p.items.length || p.adjustments.length;
+    });
+    if (!list.length) {
+      toast('Nobody has pay logged this week.');
+      return;
+    }
+    $('print').innerHTML = list
+      .map(function (p) {
+        return statementHtml(w, p);
+      })
+      .join('');
+    document.body.classList.add('printing'); // only matters on paper; see @media print
+    if (typeof window.print === 'function') window.print();
+  }
+
+  // ---------------------------------------------------------------------------
+  // Actions (buttons)
+  // ---------------------------------------------------------------------------
+
+  function idx(el) {
+    return +el.dataset.i;
+  }
+
+  var ACTIONS = {
+    close: closeModal,
+    'confirm-yes': function () {
+      var f = ui.pending;
+      closeModal();
+      if (f) f();
+    },
+    pro: function (el) {
+      openPro(el.dataset.key);
+    },
+
+    'start-fresh': function () {
+      confirmBox('Start fresh?', 'This clears the sample crew, rates and jobs so you can add your own.', 'Start fresh', function () {
+        state = E.emptyState();
+        ui.draft = null;
+        ui.open = {};
+        ui.tab = 'rates';
+        commit('Cleared. Add your tasks and rates first.');
+      });
+    },
+    'keep-sample': function () {
+      state.sample = false;
+      commit();
+    },
+
+    'week-prev': function () {
+      ui.week = E.addDays(E.weekStartOf(ui.week, state.settings.weekStart), -7);
+      render();
+    },
+    'week-next': function () {
+      ui.week = E.addDays(E.weekStartOf(ui.week, state.settings.weekStart), 7);
+      render();
+    },
+    'week-now': function () {
+      ui.week = E.localISO();
+      render();
+    },
+    'toggle-person': function (el) {
+      ui.open[el.dataset.id] = !ui.open[el.dataset.id];
+      render();
+    },
+    'go-log': function () {
+      ui.tab = 'log';
+      render();
+    },
+    'print-all': function () {
+      printStatements(null);
+    },
+    'print-one': function (el) {
+      printStatements(el.dataset.id);
+    },
+    'csv-week': function () {
+      var wk = E.weekOf(ui.week, state.settings.weekStart);
+      downloadCsv('crew-pay-week-' + wk.start + '.csv', E.exportWeekCsv(state, ui.week));
+    },
+    'csv-totals': function () {
+      var wk = E.weekOf(ui.week, state.settings.weekStart);
+      downloadCsv('crew-pay-totals-' + wk.start + '.csv', E.exportWeekTotalsCsv(state, ui.week));
+    },
+    'job-edit': function (el) {
+      var job = findById(state.jobs, el.dataset.id);
+      if (!job) return;
+      ui.draft = draftFromJob(job, false);
+      ui.tab = 'log';
+      render();
+      window.scrollTo(0, 0);
+    },
+    'job-copy': function (el) {
+      var job = findById(state.jobs, el.dataset.id);
+      if (!job) return;
+      ui.draft = draftFromJob(job, true);
+      ui.tab = 'log';
+      render();
+      window.scrollTo(0, 0);
+      toast('Copied with today’s date and current rates. Change what is different, then save.');
+    },
+    'job-del': function (el) {
+      var job = findById(state.jobs, el.dataset.id);
+      if (!job) return;
+      confirmBox('Delete this job?', job.name + ' on ' + E.fmtDay(job.date) + ' (' + money(E.jobBreakdown(job).totalCents) + ') will be removed from everyone’s pay. This cannot be undone.', 'Delete job', function () {
+        E.deleteJob(state, job.id);
+        if (ui.draft && ui.draft.id === job.id) ui.draft = null;
+        commit('Deleted ' + job.name);
+      }, true);
+    },
+
+    'line-add': function () {
+      ui.draft.lines.push(blankLine());
+      render();
+    },
+    'line-del': function (el) {
+      ui.draft.lines.splice(idx(el), 1);
+      render();
+    },
+    'line-who': function (el) {
+      var l = ui.draft.lines[idx(el)];
+      var pid = el.dataset.id;
+      var at = l.people.indexOf(pid);
+      if (at >= 0) l.people.splice(at, 1);
+      else l.people.push(pid);
+      if (!ui.draft.id) ui.lastWho = l.people.slice();
+      render();
+    },
+    'adj-add': function () {
+      var people = activePeople();
+      ui.draft.adjustments.push({ kind: 'extra', person: people.length === 1 ? people[0].id : '', amount: '', note: '' });
+      render();
+    },
+    'adj-del': function (el) {
+      ui.draft.adjustments.splice(idx(el), 1);
+      render();
+    },
+    'adj-kind': function (el) {
+      ui.draft.adjustments[idx(el)].kind = el.dataset.kind === 'backcharge' ? 'backcharge' : 'extra';
+      render();
+    },
+    'job-save': saveDraft,
+    'job-cancel': function () {
+      var editing = !!ui.draft.id;
+      ui.draft = editing ? null : newDraft(ui.draft.date);
+      if (editing) ui.tab = 'week';
+      render();
+    },
+
+    'rate-add': function () {
+      state.rates.push({ id: E.makeId('r'), name: 'New task', unit: 'each', rate: 0 });
+      commit();
+      var inputs = document.querySelectorAll('[data-f="rate-name"]');
+      var last = inputs[inputs.length - 1];
+      if (last) {
+        last.focus();
+        last.select();
+      }
+    },
+    'rate-del': function (el) {
+      var r = findById(state.rates, el.dataset.id);
+      if (!r) return;
+      confirmBox('Delete ' + r.name + '?', 'It comes off the rate card. Jobs already logged with it keep their pay.', 'Delete task', function () {
+        state.rates = state.rates.filter(function (x) {
+          return x.id !== r.id;
+        });
+        commit('Deleted ' + r.name);
+      }, true);
+    },
+
+    'person-add': function () {
+      var input = $('new-person');
+      try {
+        var p = E.addPerson(state, input.value);
+        commit('Added ' + p.name);
+        var again = $('new-person');
+        if (again) again.focus();
+      } catch (e) {
+        toast(e.message);
+      }
+    },
+    'person-active': function (el) {
+      var p = findById(state.people, el.dataset.id);
+      if (!p) return;
+      p.active = !p.active;
+      commit(p.name + (p.active ? ' is active' : ' is off (hidden from new jobs, past pay kept)'));
+    },
+    'person-del': function (el) {
+      var p = findById(state.people, el.dataset.id);
+      if (!p) return;
+      var n = E.jobsForPerson(state, p.id).length;
+      if (n) {
+        infoBox('Keep ' + p.name + ' on the books', '<p>' + esc(p.name) + ' is on ' + plural(n, 'logged job') + ', so removing them would break past pay. Tap Active to switch them Off instead; they disappear from new jobs and their past pay stays.</p>');
+        return;
+      }
+      confirmBox('Remove ' + p.name + '?', 'They have no logged jobs, so nothing else changes.', 'Remove', function () {
+        state.people = state.people.filter(function (x) {
+          return x.id !== p.id;
+        });
+        commit('Removed ' + p.name);
+      }, true);
+    },
+    weekstart: function (el) {
+      state.settings.weekStart = el.dataset.v === 'sun' ? 'sun' : 'mon';
+      commit('Pay weeks now start on ' + (state.settings.weekStart === 'sun' ? 'Sunday' : 'Monday'));
+    },
+    backup: function () {
+      download('crew-pay-backup-' + E.localISO() + '.json', E.exportBackup(state), 'application/json');
+      toast('Backup downloaded. Keep it somewhere safe.');
+    },
+    restore: function () {
+      $('file-backup').click();
+    },
+    'csv-import': function () {
+      $('file-csv').click();
+    },
+    'csv-template': function () {
+      downloadCsv('crew-pay-template.csv', E.csvTemplate());
+    },
+    'csv-all': function () {
+      downloadCsv('crew-pay-all-jobs-' + E.localISO() + '.csv', E.exportAllJobsCsv(state));
+    },
+    'load-sample': function () {
+      confirmBox('Load the sample crew?', 'This replaces everything on this device with a made-up fence crew. Download a backup first if you want to keep what is here.', 'Load sample', function () {
+        state = E.sampleState(E.localISO());
+        ui.draft = null;
+        ui.open = {};
+        ui.week = E.localISO();
+        ui.tab = 'week';
+        commit('Sample crew loaded');
+      }, true);
+    },
+    erase: function () {
+      confirmBox('Erase everything?', 'All jobs, people and rates on this device will be deleted. This cannot be undone unless you have a backup.', 'Erase everything', function () {
+        state = E.emptyState();
+        ui.draft = null;
+        ui.open = {};
+        commit('Everything erased');
+      }, true);
+    },
+    install: function () {
+      var ev = ui.installEvent;
+      ui.installEvent = null;
+      if (ev && ev.prompt) ev.prompt();
+      render();
+    },
+    'import-yes': function () {
+      var f = ui.pending;
+      closeModal();
+      if (f) f();
+    }
+  };
+
+  function onRestoreText(text) {
+    var r;
+    try {
+      r = E.importBackup(text);
+    } catch (e) {
+      infoBox('Could not restore', '<p>' + esc(e.message) + '</p>');
+      return;
+    }
+    var s = r.state;
+    var when = r.exportedAt ? ' (saved ' + r.exportedAt.slice(0, 10) + ')' : '';
+    confirmBox(
+      'Replace everything with this backup?',
+      'The backup' + when + ' has ' + plural(s.jobs.length, 'job') + ', ' + plural(s.people.length, 'person').replace('persons', 'people') + ' and ' +
+        plural(s.rates.length, 'task') + ' on the rate card. What is on this device now will be replaced.',
+      'Restore',
+      function () {
+        state = s;
+        ui.draft = null;
+        ui.open = {};
+        ui.tab = 'week';
+        commit('Backup restored');
+      }
+    );
+  }
+
+  function onCsvText(text) {
+    var r;
+    try {
+      r = E.importJobsCsv(state, text);
+    } catch (e) {
+      infoBox('Could not import', '<p>' + esc(e.message) + '</p>');
+      return;
+    }
+    function list(items, cls) {
+      if (!items.length) return '';
+      var shown = items.slice(0, 15).map(function (x) {
+        return '<li>' + esc(x) + '</li>';
+      });
+      if (items.length > 15) shown.push('<li>…and ' + (items.length - 15) + ' more</li>');
+      return '<ul class="plain small ' + (cls || '') + '">' + shown.join('') + '</ul>';
+    }
+    var h = '<p>' + (r.jobsAdded ? 'Ready to add <b>' + plural(r.jobsAdded, 'job') + '</b> (' + plural(r.linesAdded, 'line') + ').' : 'Nothing to add.') +
+      (r.peopleAdded.length ? ' New people: ' + esc(r.peopleAdded.join(', ')) + '.' : '') + '</p>';
+    if (r.errors.length) h += '<div class="lbl">Problems</div>' + list(r.errors, 'err');
+    if (r.warnings.length) h += '<div class="lbl">Notes</div>' + list(r.warnings);
+    h += '<div class="btns"><button class="btn" data-act="close">Cancel</button>' +
+      (r.jobsAdded ? '<button class="btn main" data-act="import-yes">Add ' + plural(r.jobsAdded, 'job') + '</button>' : '') + '</div>';
+    modal('<h3>Import jobs</h3>' + h);
+    ui.pending = function () {
+      state = r.state;
+      ui.tab = 'week';
+      if (r.state.jobs.length) {
+        var last = r.state.jobs[r.state.jobs.length - 1];
+        ui.week = last.date;
+      }
+      commit('Imported ' + plural(r.jobsAdded, 'job'));
+    };
+  }
+
+  // ---------------------------------------------------------------------------
+  // Typing in fields
+  // ---------------------------------------------------------------------------
+
+  function markInvalid(el, bad) {
+    if (bad) el.setAttribute('aria-invalid', 'true');
+    else el.removeAttribute('aria-invalid');
+    el.style.borderColor = bad ? 'var(--bad)' : '';
+  }
+
+  function onField(el) {
+    var f = el.dataset.f;
+    var d = ui.draft;
+    var v = el.value;
+    var i = idx(el);
+    switch (f) {
+      case 'date':
+        d.date = v;
+        break;
+      case 'name':
+        d.name = v;
+        break;
+      case 'notes':
+        d.notes = v;
+        break;
+      case 'qty':
+        d.lines[i].qty = v;
+        updateDraftTotals();
+        break;
+      case 'rate':
+        d.lines[i].rate = v;
+        updateDraftTotals();
+        break;
+      case 'task': {
+        var l = d.lines[i];
+        var r = findById(state.rates, v);
+        if (r) {
+          l.rateId = r.id;
+          l.task = r.name;
+          l.unit = r.unit;
+          l.rate = E.fmtRate(r.rate);
+        } else if (v === '') {
+          l.rateId = '';
+          l.task = '';
+          l.unit = '';
+        }
+        render();
+        var qty = document.querySelector('[data-f="qty"][data-i="' + i + '"]');
+        if (qty && r) qty.focus();
+        break;
+      }
+      case 'adj-person':
+        d.adjustments[i].person = v;
+        updateDraftTotals();
+        break;
+      case 'adj-amount':
+        d.adjustments[i].amount = v;
+        updateDraftTotals();
+        break;
+      case 'adj-note':
+        d.adjustments[i].note = v;
+        break;
+      case 'rate-name':
+      case 'rate-unit':
+      case 'rate-rate': {
+        var rate = findById(state.rates, el.dataset.id);
+        if (!rate) return;
+        if (f === 'rate-name') {
+          markInvalid(el, !v.trim());
+          if (v.trim()) rate.name = v.trim().slice(0, 80);
+        } else if (f === 'rate-unit') {
+          rate.unit = v.trim().slice(0, 20) || 'each';
+        } else {
+          var n = E.parseNumber(v);
+          markInvalid(el, n === null || n < 0);
+          if (n !== null && n >= 0) rate.rate = n;
+        }
+        save();
+        break;
+      }
+      case 'crew-name':
+        state.settings.crewName = v.trim().slice(0, 80);
+        $('crewname').textContent = state.settings.crewName;
+        save();
+        break;
+      case 'person-name': {
+        var p = findById(state.people, el.dataset.id);
+        if (!p) return;
+        var clean = E.cleanPersonName(v);
+        var other = E.findPersonByName(state, clean);
+        var bad = !clean || (other && other.id !== p.id);
+        markInvalid(el, bad);
+        if (!bad) {
+          p.name = clean;
+          save();
+        }
+        break;
+      }
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Wiring
+  // ---------------------------------------------------------------------------
+
+  document.addEventListener('click', function (ev) {
+    var t = ev.target.closest('[data-act], [data-tab]');
+    if (!t) {
+      if (ev.target === $('modal')) closeModal();
+      return;
+    }
+    if (t.dataset.tab) {
+      ui.tab = t.dataset.tab;
+      render();
+      window.scrollTo(0, 0);
+      return;
+    }
+    var fn = ACTIONS[t.dataset.act];
+    if (fn) {
+      ev.preventDefault();
+      fn(t, ev);
+    }
+  });
+
+  document.addEventListener('input', function (ev) {
+    var t = ev.target;
+    if (t.tagName !== 'SELECT' && t.dataset && t.dataset.f) onField(t);
+  });
+
+  document.addEventListener('change', function (ev) {
+    var t = ev.target;
+    if (t.tagName === 'SELECT' && t.dataset.f) onField(t);
+    if (t.id === 'file-backup') readFile(t, onRestoreText);
+    if (t.id === 'file-csv') readFile(t, onCsvText);
+  });
+
+  document.addEventListener('keydown', function (ev) {
+    if (ev.key === 'Escape' && $('modal').classList.contains('on')) closeModal();
+    if ((ev.key === 'Enter' || ev.key === ' ') && ev.target.getAttribute && ev.target.getAttribute('role') === 'button') {
+      ev.preventDefault();
+      ev.target.click();
+    }
+    if (ev.key === 'Enter' && ev.target.id === 'new-person') ACTIONS['person-add']();
+  });
+
+  window.addEventListener('beforeinstallprompt', function (ev) {
+    ev.preventDefault();
+    ui.installEvent = ev;
+    if (ui.tab === 'setup') render();
+  });
+
+  window.addEventListener('afterprint', function () {
+    document.body.classList.remove('printing');
+  });
+
+  // Works offline once installed. Only on a real web address; opening the file directly skips it.
+  if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) {
+    navigator.serviceWorker.register('sw.js').catch(function () {
+      /* the page still works without it */
+    });
+    try {
+      if (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches && navigator.storage && navigator.storage.persist) {
+        navigator.storage.persist().catch(function () {});
+      }
+    } catch (e) {
+      /* optional */
+    }
+  }
+
+  state = load();
+  render();
+})();
+</script>
+</body>
+</html>

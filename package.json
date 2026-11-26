@@ -1,0 +1,28 @@
+{
+  "name": "crew-pay-board",
+  "version": "1.0.0",
+  "description": "Free, phone-first piece-rate pay board for small trade crews. One HTML file, works offline, data stays on your device.",
+  "license": "MIT",
+  "private": true,
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/westidwell/crew-pay-board.git"
+  },
+  "keywords": [
+    "piece-rate",
+    "payroll",
+    "contractor",
+    "crew",
+    "pwa",
+    "offline"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "node scripts/build.js",
+    "check": "node scripts/build.js --check",
+    "icons": "node scripts/make-icons.js",
+    "test": "node --test"
+  }
+}
